@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /**
  * BnkApp — Browser-Based Installation Wizard
  *
@@ -7,11 +8,10 @@
  *
  * Nginx quick-start (point your server root at the repo root for the installer):
  *   location / { try_files $uri $uri/ /install.php?$query_string; }
- *   location ~ \.php$ { fastcgi_pass unix:/run/php/php8.2-fpm.sock; ... }
+ *   location ~ \.php$ { fastcgi_pass unix:/run/php/php8.3-fpm.sock; ... }
  *
  * Once done, reconfigure Nginx to point to app/admin/public or app/portal/public.
  */
-declare(strict_types=1);
 
 // ---------------------------------------------------------------------------
 // 0. Guard: already installed?
