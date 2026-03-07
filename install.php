@@ -741,7 +741,7 @@ function showAlert(containerId, ok, html) {
   const el = document.getElementById(containerId);
   if (!el) return;
   const cls = ok ? 'alert-dark-success' : 'alert-dark-danger';
-  el.innerHTML = `<div class="alert ${cls} rounded-3 py-2 px-3 mt-3">${html}</div>`;
+  el.innerHTML = `<div class="alert \${cls} rounded-3 py-2 px-3 mt-3">\${html}</div>`;
 }
 
 // ── Step 2: Test DB connection ────────────────────────────────────────────────
@@ -785,8 +785,8 @@ if (migrateBtn) {
             errs = '<div class="mig-errors">' + r.errors.map(e => '⚠ ' + e).join('<br>') + '</div>';
           }
           html += `<div class="mig-file">
-            <div class="mig-file-header">${icon} <code>${r.file}</code> — ${r.label}</div>
-            ${errs}
+            <div class="mig-file-header">\${icon} <code>\${r.file}</code> — \${r.label}</div>
+            \${errs}
           </div>`;
         });
       }
