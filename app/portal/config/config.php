@@ -8,7 +8,7 @@ declare(strict_types=1);
 return [
     'app' => [
         'name'     => 'BnkApp Portal',
-        'url'      => getenv('APP_URL')   ?: 'http://localhost/portal/public',
+        'url'      => getenv('APP_URL')   ?: 'http://localhost/app/portal/public',
         'debug'    => (bool)(getenv('APP_DEBUG') ?: false),
         'timezone' => getenv('APP_TIMEZONE') ?: 'Europe/Berlin',
     ],

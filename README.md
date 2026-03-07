@@ -42,18 +42,39 @@ See **[database/README.md](database/README.md)** for:
 - Security checklist
 - SEPA compliance notes
 
-## Admin Backend (PHP)
-
-The PHP backend lives in `admin/`. Point your web server document root at `admin/public/`.
+## Repository Layout
 
 ```
-admin/
+/                      ← Marketing / frontend (public-facing website)
+├── app/               ← Back-end applications (NOT directly web-accessible)
+│   ├── admin/         ← Admin back-office panel
+│   │   └── public/   ← Web root for admin  → point document root here
+│   └── portal/        ← Customer self-service portal
+│       └── public/   ← Web root for portal → point document root here
+├── database/          ← SQL migrations & seed data
+└── README.md
+```
+
+> **Deployment rule:** your web server must have **two virtual hosts** (or subdomains),
+> each pointing to a different `public/` directory:
+>
+> | Application   | Document root                |
+> |---------------|------------------------------|
+> | Admin panel   | `app/admin/public/`          |
+> | Customer portal | `app/portal/public/`       |
+
+## Admin Backend (`app/admin/`)
+
+The admin panel lives in `app/admin/`. Point your web server document root at `app/admin/public/`.
+
+```
+app/admin/
 ├── public/               ← Web root (only this directory is web-accessible)
 │   ├── index.php         ← Single entry point
 │   ├── .htaccess         ← mod_rewrite rules + security headers
 │   └── assets/
-│       ├── css/admin.css
-│       ├── js/admin.js
+│       ├── css/admin.css ← Professional Bootstrap 5 custom styles
+│       ├── js/admin.js   ← Sidebar toggle, toasts, AJAX helpers
 │       └── img/
 ├── config/
 │   ├── config.php        ← DB, session, security settings (use env vars)
@@ -68,24 +89,8 @@ admin/
 │   ├── Response.php      ← JSON / view / redirect / abort helpers
 │   ├── Session.php       ← Secure session + flash messages
 │   └── Auth.php          ← Login, logout, role checks
-├── controllers/          ← One controller per domain area
-│   ├── AuthController.php
-│   ├── DashboardController.php
-│   ├── UserController.php
-│   ├── AccountController.php
-│   ├── TransactionController.php
-│   ├── LoanController.php
-│   ├── CardController.php
-│   ├── ReportController.php
-│   └── SupportController.php
-├── models/
-│   ├── User.php
-│   ├── BankAccount.php
-│   ├── Transaction.php
-│   ├── Loan.php
-│   ├── Card.php
-│   ├── KycDocument.php
-│   └── AuditLog.php
+├── controllers/          ← One controller per domain area (20 controllers)
+├── models/               ← Active-record style models (7 models)
 ├── middleware/
 │   ├── AuthMiddleware.php   ← Redirect unauthenticated users
 │   ├── RoleMiddleware.php   ← Restrict to admin-level roles
@@ -94,37 +99,81 @@ admin/
 │   ├── IbanHelper.php       ← PHP IBAN generation & validation (ISO 7064)
 │   ├── FormatHelper.php     ← Money, date, status badge, HTML escape
 │   └── ValidationHelper.php ← IBAN, BIC, amount, password strength checks
-├── views/
+├── views/                ← Bootstrap 5 views (31 views across 16 sections)
 │   ├── layouts/
 │   │   ├── main.php         ← Sidebar layout (authenticated pages)
 │   │   └── auth.php         ← Centred card layout (login page)
-│   ├── auth/login.php
-│   ├── dashboard/index.php
-│   ├── users/index.php
-│   ├── accounts/index.php
-│   ├── transactions/index.php
-│   ├── loans/index.php
-│   ├── cards/index.php
-│   ├── reports/index.php
-│   └── support/index.php
+│   ├── auth/, dashboard/, users/, accounts/, transactions/
+│   ├── loans/, cards/, kyc/, sepa/, mandates/, standing-orders/
+│   ├── beneficiaries/, branches/, fee-schedules/, exchange-rates/
+│   ├── notifications/, support/, reports/, settings/
 └── storage/
     └── logs/               ← Application log files (git-ignored)
+```
+
+## Customer Portal (`app/portal/`)
+
+The customer self-service portal lives in `app/portal/`. Point your web server document root at `app/portal/public/`.
+
+```
+app/portal/
+├── public/               ← Web root
+│   ├── index.php
+│   ├── .htaccess
+│   └── assets/
+│       ├── css/portal.css ← Professional Bootstrap 5 portal styles
+│       └── js/portal.js   ← CSRF AJAX helper, toasts, card UI
+├── config/config.php
+├── core/                  ← App, Router, Database, Session, Request, Auth, Controller
+├── controllers/           ← 14 controllers covering all customer journeys
+├── middleware/            ← AuthMiddleware, CsrfMiddleware
+└── views/                 ← 22+ Bootstrap 5 views
+    ├── layouts/main.php   ← Sidebar layout with notification badge
+    ├── layouts/auth.php   ← Centred auth card
+    ├── auth/              ← login, register
+    ├── dashboard/         ← balance cards, quick actions, recent transactions
+    ├── accounts/          ← index + statement view
+    ├── transactions/      ← paginated list + detail
+    ├── transfer/          ← internal transfer + SEPA transfer
+    ├── beneficiaries/     ← cards + add modal
+    ├── standing-orders/   ← list + create modal + pause/cancel
+    ├── loans/             ← index (progress bar) + show (amortisation) + apply
+    ├── cards/             ← visual card UI + freeze/unfreeze
+    ├── support/           ← ticket list + chat-style thread + reply
+    ├── notifications/     ← unread badge + mark-all-read
+    ├── profile/           ← edit info + change password + KYC status
+    └── kyc/               ← status banner + document upload
 ```
 
 ### Quick Start
 
 ```bash
-# 1. Configure environment (copy and edit config)
-cp admin/config/config.php admin/config/config.local.php  # edit DB credentials
+# 1. Configure environment variables (used by both apps)
+export DB_HOST=127.0.0.1
+export DB_NAME=bnkapp
+export DB_USER=bnkapp_admin
+export DB_PASSWORD=secret
 
-# 2. Set web server document root to admin/public/
-
-# 3. Apply database migrations (see Database section above)
+# 2. Apply database migrations
 mysql -u root -p bnkapp < database/01_schema.sql
 mysql -u root -p bnkapp < database/02_functions.sql
 mysql -u root -p bnkapp < database/03_indexes.sql
 mysql -u root -p bnkapp < database/04_seed.sql
 
-# 4. Navigate to http://localhost/auth/login
-#    Default admin: admin@bnkapp.example (change password before use!)
+# 3a. Configure admin web server (Apache example)
+#     DocumentRoot /var/www/bnkapp/app/admin/public
+#     <Directory /var/www/bnkapp/app/admin/public>
+#         AllowOverride All
+#     </Directory>
+
+# 3b. Configure portal web server (Apache example)
+#     DocumentRoot /var/www/bnkapp/app/portal/public
+#     <Directory /var/www/bnkapp/app/portal/public>
+#         AllowOverride All
+#     </Directory>
+
+# 4. Navigate to:
+#    Admin:  https://admin.bnkapp.example/auth/login
+#    Portal: https://my.bnkapp.example/login
+#    Default admin: admin@bnkapp.example (change password before going live!)
 ```
