@@ -1,8 +1,23 @@
 <?php
 /**
  * BnkApp Customer Portal — Public Entry Point
+ *
+ * Point your web server document root to app/portal/public/.
+ *
+ * Nginx example:
+ *   root /var/www/bnkapp/app/portal/public;
+ *   try_files $uri $uri/ /index.php?$query_string;
  */
 declare(strict_types=1);
+
+// ---------------------------------------------------------------------------
+// Load environment variables written by the installer (app/env.php).
+// ---------------------------------------------------------------------------
+$_envFile = dirname(dirname(__DIR__)) . '/env.php';
+if (file_exists($_envFile)) {
+    require $_envFile;
+}
+unset($_envFile);
 
 // Resolve the portal root
 define('PORTAL_ROOT',   dirname(__DIR__));
