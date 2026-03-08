@@ -81,29 +81,79 @@ exit;
 
 function ajaxTestDb(): array
 {
-    $host = trim($_POST['db_host'] ?? '');
-    $port = (int)($_POST['db_port'] ?? 3306);
-    $name = trim($_POST['db_name'] ?? '');
-    $user = trim($_POST['db_user'] ?? '');
-    $pass = $_POST['db_pass'] ?? '';
+    $host      = trim($_POST['db_host']    ?? '');
+    $port      = (int)($_POST['db_port']   ?? 3306);
+    $name      = trim($_POST['db_name']    ?? '');
+    $user      = trim($_POST['db_user']    ?? '');
+    $pass      = $_POST['db_pass']         ?? '';
+    $adminUser = trim($_POST['admin_user'] ?? '');
+    $adminPass = $_POST['admin_pass']      ?? '';
 
     if (!$host || !$name || !$user) {
         return ['ok' => false, 'message' => 'Host, database name, and username are required.'];
     }
 
-    try {
-        $dsn = "mysql:host={$host};port={$port};charset=utf8mb4";
-        $pdo = new PDO($dsn, $user, $pass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+    // Reject host values that contain DSN metacharacters to prevent injection.
+    if (!preg_match('/^[a-zA-Z0-9\-\.\[\]:_]+$/', $host)) {
+        return ['ok' => false, 'message' => 'Invalid characters in database host.'];
+    }
 
-        // Check if database exists, create if allowed
-        $stmt = $pdo->query("SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = " . $pdo->quote($name));
+    $grantMsg = '';
+
+    // If privileged admin credentials were provided, use them to create the
+    // application database user and grant it the required privileges.
+    if ($adminUser !== '') {
+        try {
+            $adminPdo = new PDO(
+                "mysql:host={$host};port={$port};charset=utf8mb4",
+                $adminUser,
+                $adminPass,
+                [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+            );
+
+            // Create the database under the admin account
+            $safeName = str_replace('`', '``', $name);
+            $adminPdo->exec("CREATE DATABASE IF NOT EXISTS `{$safeName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+
+            // Create the app user and grant ALL PRIVILEGES (database-scoped —
+            // does NOT include global privileges such as CREATE USER or SHUTDOWN)
+            // for both Unix-socket ('localhost') and TCP ('%') connections.
+            // Note: IDENTIFIED BY transmits the password in plaintext inside the
+            // SQL statement; enable MySQL's general_log only for debugging.
+            $quotedUser = $adminPdo->quote($user);
+            $quotedPass = $adminPdo->quote($pass);
+            foreach (['localhost', '%'] as $grantHost) {
+                $adminPdo->exec("CREATE USER IF NOT EXISTS {$quotedUser}@'{$grantHost}' IDENTIFIED BY {$quotedPass}");
+                $adminPdo->exec("GRANT ALL PRIVILEGES ON `{$safeName}`.* TO {$quotedUser}@'{$grantHost}'");
+            }
+            $adminPdo->exec('FLUSH PRIVILEGES');
+
+            $grantMsg = ' Privileges granted to <strong>' . htmlspecialchars($user) . '</strong>.';
+        } catch (PDOException $e) {
+            return ['ok' => false, 'message' => 'Admin connection failed: ' . htmlspecialchars($e->getMessage())];
+        }
+    }
+
+    // Verify connection with the application-user credentials
+    try {
+        $pdo = new PDO(
+            "mysql:host={$host};port={$port};charset=utf8mb4",
+            $user,
+            $pass,
+            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+        );
+
+        // Check whether the target database exists
+        $stmt   = $pdo->query("SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = " . $pdo->quote($name));
         $exists = (bool)$stmt->fetchColumn();
 
         if (!$exists) {
-            $pdo->exec("CREATE DATABASE IF NOT EXISTS `{$name}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-            $msg = "Connected successfully. Database <strong>{$name}</strong> was created.";
+            // No admin user was provided — attempt to create with the app user
+            $safeName = str_replace('`', '``', $name);
+            $pdo->exec("CREATE DATABASE IF NOT EXISTS `{$safeName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+            $msg = "Connected successfully. Database <strong>" . htmlspecialchars($name) . "</strong> was created.{$grantMsg}";
         } else {
-            $msg = "Connected successfully. Database <strong>{$name}</strong> exists.";
+            $msg = "Connected successfully. Database <strong>" . htmlspecialchars($name) . "</strong> exists.{$grantMsg}";
         }
 
         // Save credentials to session
@@ -950,8 +1000,11 @@ function renderStep2(bool $dbSaved): string
 
 <p class="text-secondary mb-3" style="font-size:.9rem;">
   Enter your MySQL connection details. The installer will test the connection and
-  create the database if it does not exist. The MySQL user must have
+  create the database if it does not exist. The application user must have
   <code>CREATE, DROP, ALTER, INSERT, UPDATE, SELECT, EXECUTE</code> privileges.
+  If the user does not exist yet or receives <em>Access denied</em>, expand
+  <strong>Grant privileges</strong> below to let the installer create the user and
+  grant the required permissions using a privileged account (e.g.&nbsp;<code>root</code>).
 </p>
 
 {$savedNotice}
@@ -1002,6 +1055,51 @@ function renderStep2(bool $dbSaved): string
                 onclick="const i=this.previousElementSibling;i.type=i.type==='password'?'text':'password'">
           <i class="bi bi-eye"></i>
         </button>
+      </div>
+    </div>
+  </div>
+
+  <hr class="my-3">
+
+  <div class="mb-2">
+    <button class="btn btn-sm btn-outline-secondary" type="button"
+            data-bs-toggle="collapse" data-bs-target="#admin-creds-section"
+            aria-expanded="false" aria-controls="admin-creds-section">
+      <i class="bi bi-shield-lock me-1"></i> Optional: Grant privileges with a MySQL admin account
+    </button>
+  </div>
+
+  <div class="collapse" id="admin-creds-section">
+    <div class="card card-body bg-dark border-secondary mb-3">
+      <p class="text-muted small mb-3">
+        <i class="bi bi-info-circle me-1"></i>
+        Provide a <strong>privileged</strong> MySQL account (e.g.&nbsp;<code>root</code>).
+        The installer will run <code>CREATE USER IF NOT EXISTS</code> and
+        <code>GRANT ALL PRIVILEGES ON <em>database</em>.* TO <em>user</em></code>
+        so the application user can connect.
+        These credentials are used only during this test and are never stored.
+      </p>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label" for="admin_user">Admin Username</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-person-fill-gear"></i></span>
+            <input type="text" class="form-control" id="admin_user" name="admin_user"
+                   placeholder="root" autocomplete="off">
+          </div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="admin_pass">Admin Password</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-key-fill"></i></span>
+            <input type="password" class="form-control" id="admin_pass" name="admin_pass"
+                   placeholder="Admin password" autocomplete="new-password">
+            <button class="btn btn-outline-secondary" type="button"
+                    onclick="const i=this.previousElementSibling;i.type=i.type==='password'?'text':'password'">
+              <i class="bi bi-eye"></i>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
