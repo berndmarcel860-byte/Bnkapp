@@ -148,32 +148,38 @@ app/portal/
 ### Quick Start
 
 ```bash
-# 1. Configure environment variables (used by both apps)
-export DB_HOST=127.0.0.1
-export DB_NAME=bnkapp
-export DB_USER=bnkapp_admin
-export DB_PASSWORD=secret
+# 1. Clone and enter the repository
+git clone https://github.com/berndmarcel860-byte/Bnkapp /var/www/bnkapp
+cd /var/www/bnkapp
 
-# 2. Apply database migrations
-mysql -u root -p bnkapp < database/01_schema.sql
-mysql -u root -p bnkapp < database/02_functions.sql
-mysql -u root -p bnkapp < database/03_indexes.sql
-mysql -u root -p bnkapp < database/04_seed.sql
+# 2. Grant the web server write access to installer-required directories.
+#    The installer writes env.php, install.lock, and log files on your behalf.
+#    Without this step the System Requirements check shows "NOT WRITABLE".
+sudo bash deploy/setup-permissions.sh /var/www/bnkapp www-data
+#    (replace "www-data" with "nginx" on RHEL/CentOS systems)
 
-# 3a. Configure admin web server (Apache example)
-#     DocumentRoot /var/www/bnkapp/app/admin/public
-#     <Directory /var/www/bnkapp/app/admin/public>
-#         AllowOverride All
-#     </Directory>
+# 3. Configure Nginx — use the HTTP-only bootstrap config first (no cert needed yet).
+#    The installer will display the post-install Nginx config, or use the templates:
+sudo cp deploy/nginx.conf /etc/nginx/sites-available/bnkapp.conf
+sudo ln -s /etc/nginx/sites-available/bnkapp.conf /etc/nginx/sites-enabled/
+#    Edit the file: replace "yourdomain.com" placeholders with real domains.
+sudo nginx -t && sudo systemctl reload nginx
 
-# 3b. Configure portal web server (Apache example)
-#     DocumentRoot /var/www/bnkapp/app/portal/public
-#     <Directory /var/www/bnkapp/app/portal/public>
-#         AllowOverride All
-#     </Directory>
+# 4. Run the web installer — visit http://<your-domain>/install.php
+#    The wizard will:
+#      • Check system requirements (PHP extensions, writable directories)
+#      • Test and configure the MySQL connection
+#      • Run database migrations (schema, functions, indexes, seed data)
+#      • Create the first admin account
+#      • Write app/env.php and create install.lock
 
-# 4. Navigate to:
-#    Admin:  https://admin.bnkapp.example/auth/login
-#    Portal: https://my.bnkapp.example/login
-#    Default admin: admin@bnkapp.example (change password before going live!)
+# 5. After the installer completes, obtain TLS certificates:
+sudo certbot --nginx -d admin.yourdomain.com -d portal.yourdomain.com
+
+# 6. Harden permissions now that the installer has finished:
+sudo bash deploy/post-install-permissions.sh /var/www/bnkapp www-data
+
+# 7. Navigate to:
+#    Admin:  https://admin.yourdomain.com/auth/login
+#    Portal: https://portal.yourdomain.com/login
 ```

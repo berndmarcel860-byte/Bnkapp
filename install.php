@@ -521,7 +521,7 @@ function checkRequirements(): array
             'label' => $label,
             'value' => $ok ? 'Writable' : 'NOT WRITABLE',
             'ok'    => $ok,
-            'note'  => $ok ? '' : "Run: chmod 755 {$path}",
+            'note'  => $ok ? '' : "Run: sudo chown www-data:www-data {$path}",
         ];
     }
 
