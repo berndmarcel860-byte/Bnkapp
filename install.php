@@ -551,24 +551,51 @@ function allRequirementsMet(array $checks): bool
 
 function nginxConfig(): string
 {
-    $base = htmlspecialchars('/var/www/bnkapp');
+    $base = '/var/www/bnkapp';
     return <<<NGINX
-# ── Admin Panel ────────────────────────────────────────────────────────────────
+# ── HTTP → HTTPS redirect ──────────────────────────────────────────────────────
 server {
     listen 80;
+    listen [::]:80;
+    server_name admin.yourdomain.com portal.yourdomain.com;
+
+    # Allow Let's Encrypt ACME challenges before redirecting
+    # The directory /var/www/letsencrypt must exist and be readable by Nginx.
+    # Create it with: sudo mkdir -p /var/www/letsencrypt
+    # Certbot webroot plugin uses it with: --webroot -w /var/www/letsencrypt
+    location /.well-known/acme-challenge/ {
+        root /var/www/letsencrypt;
+        allow all;
+    }
+
+    location / {
+        return 301 https://\$host\$request_uri;
+    }
+}
+
+# ── Admin Panel ────────────────────────────────────────────────────────────────
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
     server_name admin.yourdomain.com;
+
     root {$base}/app/admin/public;
     index index.php;
+
+    ssl_certificate     /etc/letsencrypt/live/admin.yourdomain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/admin.yourdomain.com/privkey.pem;
+    include             /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam         /etc/letsencrypt/ssl-dhparams.pem;
 
     location / {
         try_files \$uri \$uri/ /index.php?\$query_string;
     }
 
     location ~ \\.php\$ {
-        fastcgi_pass   unix:/run/php/php8.2-fpm.sock;  # adjust PHP-FPM socket
-        fastcgi_index  index.php;
-        fastcgi_param  SCRIPT_FILENAME \$realpath_root\$fastcgi_script_name;
-        include        fastcgi_params;
+        fastcgi_pass        unix:/var/run/php/php8.3-fpm.sock;
+        fastcgi_index       index.php;
+        fastcgi_param       SCRIPT_FILENAME \$realpath_root\$fastcgi_script_name;
+        include             fastcgi_params;
     }
 
     location ~ /\\. { deny all; }
@@ -576,20 +603,27 @@ server {
 
 # ── Customer Portal ─────────────────────────────────────────────────────────────
 server {
-    listen 80;
+    listen 443 ssl;
+    listen [::]:443 ssl;
     server_name portal.yourdomain.com;
+
     root {$base}/app/portal/public;
     index index.php;
+
+    ssl_certificate     /etc/letsencrypt/live/portal.yourdomain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/portal.yourdomain.com/privkey.pem;
+    include             /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam         /etc/letsencrypt/ssl-dhparams.pem;
 
     location / {
         try_files \$uri \$uri/ /index.php?\$query_string;
     }
 
     location ~ \\.php\$ {
-        fastcgi_pass   unix:/run/php/php8.2-fpm.sock;  # adjust PHP-FPM socket
-        fastcgi_index  index.php;
-        fastcgi_param  SCRIPT_FILENAME \$realpath_root\$fastcgi_script_name;
-        include        fastcgi_params;
+        fastcgi_pass        unix:/var/run/php/php8.3-fpm.sock;
+        fastcgi_index       index.php;
+        fastcgi_param       SCRIPT_FILENAME \$realpath_root\$fastcgi_script_name;
+        include             fastcgi_params;
     }
 
     location ~ /\\. { deny all; }
@@ -1277,7 +1311,7 @@ function renderStep5(bool $admDone): string
              . '<a href="?step=4" class="btn btn-outline-secondary mt-3">&larr; Back</a>';
     }
 
-    $nginx = nginxConfig();
+    $nginx = htmlspecialchars(nginxConfig(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 
     return <<<HTML
 <h2><i class="bi bi-flag-fill text-success"></i> Step 5 — Finalize Installation</h2>
@@ -1335,7 +1369,10 @@ function renderStep5(bool $admDone): string
   <h5 class="mb-3"><i class="bi bi-server me-2 text-info"></i>Nginx Configuration</h5>
   <p class="text-secondary" style="font-size:.85rem;">
     Configure two virtual hosts in Nginx — one for the admin panel, one for the customer portal.
-    Replace <code>/var/www/bnkapp</code> with the actual path to your BnkApp directory.
+    Replace <code>/var/www/bnkapp</code> with the actual path to your BnkApp directory and
+    <code>yourdomain.com</code> with your real domain names.
+    Adjust the PHP-FPM socket path if you use a different PHP version
+    (e.g. <code>php8.3-fpm.sock</code> is used below for PHP 8.3).
   </p>
   <div class="d-flex justify-content-end mb-2">
     <button id="btn-copy-nginx" class="btn btn-outline-secondary btn-sm">Copy</button>
@@ -1346,10 +1383,14 @@ function renderStep5(bool $admDone): string
     <h6 class="text-info mb-3"><i class="bi bi-list-check me-2"></i>Next Steps</h6>
     <ol class="text-secondary" style="font-size:.9rem;line-height:2;">
       <li>Copy the Nginx config above into <code>/etc/nginx/sites-available/bnkapp.conf</code></li>
+      <li>Replace <code>admin.yourdomain.com</code> and <code>portal.yourdomain.com</code> with your real domains</li>
       <li>Enable it: <code>sudo ln -s /etc/nginx/sites-available/bnkapp.conf /etc/nginx/sites-enabled/</code></li>
+      <li>Create the Let's Encrypt webroot directory: <code>sudo mkdir -p /var/www/letsencrypt</code></li>
       <li>Test: <code>sudo nginx -t</code> then reload: <code>sudo systemctl reload nginx</code></li>
       <li>Update DNS to point your domains to this server</li>
-      <li>Obtain TLS certificates: <code>sudo certbot --nginx -d admin.yourdomain.com -d portal.yourdomain.com</code></li>
+      <li>Obtain TLS certificates via Certbot:
+        <code>sudo certbot --nginx -d admin.yourdomain.com -d portal.yourdomain.com</code>
+      </li>
       <li>Log in to the admin panel at <strong>https://admin.yourdomain.com/auth/login</strong></li>
       <li><strong class="text-warning">Delete or restrict access to <code>install.php</code></strong></li>
     </ol>
