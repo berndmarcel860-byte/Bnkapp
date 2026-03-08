@@ -40,8 +40,10 @@ class App
     {
         header('X-Frame-Options: DENY');
         header('X-Content-Type-Options: nosniff');
+        header('X-XSS-Protection: 1; mode=block');
         header('Referrer-Policy: strict-origin-when-cross-origin');
-        header("Content-Security-Policy: default-src 'self' https://cdn.jsdelivr.net; img-src 'self' data:; font-src 'self' https://cdn.jsdelivr.net;");
+        header("Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; font-src 'self' https://cdn.jsdelivr.net; img-src 'self' data:;");
+        header('Permissions-Policy: geolocation=(), microphone=(), camera=()');
     }
 
     private function registerAutoloader(): void
