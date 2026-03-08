@@ -247,7 +247,7 @@
 </div>
 
 <!-- Bootstrap 5.3 JS Bundle -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc4s9bIOgUxi8T/jzmQ==" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc4s9bIOgUxi8T/jzmQI1vl7/ggKwXgIGfwBs3TSCP8s=" crossorigin="anonymous"></script>
 <!-- Custom admin JS -->
 <script src="/assets/js/admin.js"></script>
 </body>

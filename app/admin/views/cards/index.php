@@ -7,7 +7,9 @@ ob_start(); ?>
 
 <div class="d-flex align-items-center justify-content-between mb-3">
     <h1 class="page-title mb-0">Cards</h1>
-    <a href="/cards/create" class="btn btn-primary btn-sm"><i class="bi bi-plus-circle me-1"></i>Issue Card</a>
+    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#issueCardModal">
+        <i class="bi bi-plus-circle me-1"></i>Issue Card
+    </button>
 </div>
 
 <div class="card table-card">
@@ -47,6 +49,64 @@ ob_start(); ?>
             <?php endif; ?>
             </tbody>
         </table>
+    </div>
+</div>
+
+<!-- Issue Card Modal -->
+<div class="modal fade" id="issueCardModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="/cards" data-ajax="true" data-reload="true">
+                <?= \BnkApp\Middleware\CsrfMiddleware::field() ?>
+                <div class="modal-header">
+                    <h5 class="modal-title">Issue New Card</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Account ID</label>
+                        <input type="number" name="account_id" class="form-control" min="1" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Cardholder Name</label>
+                        <input type="text" name="cardholder_name" class="form-control" maxlength="100" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Card Type</label>
+                        <select name="card_type" class="form-select" required>
+                            <option value="debit">Debit</option>
+                            <option value="credit">Credit</option>
+                            <option value="prepaid">Prepaid</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Network</label>
+                        <select name="card_network" class="form-select" required>
+                            <option value="visa">Visa</option>
+                            <option value="mastercard">Mastercard</option>
+                            <option value="maestro">Maestro</option>
+                            <option value="amex">Amex</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Expiry Month</label>
+                        <input type="number" name="expiry_month" class="form-control" min="1" max="12" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Expiry Year</label>
+                        <input type="number" name="expiry_year" class="form-control" min="<?= date('Y') ?>" max="<?= date('Y')+10 ?>" value="<?= date('Y')+3 ?>" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">PIN (4 digits)</label>
+                        <input type="password" name="pin" class="form-control" minlength="4" maxlength="4" pattern="\d{4}" required autocomplete="new-password">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-credit-card me-1"></i>Issue Card</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 

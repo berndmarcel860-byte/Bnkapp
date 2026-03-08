@@ -27,7 +27,7 @@ class NotificationController extends Controller
         $bindings   = [];
 
         if ($type !== '') {
-            $conditions[] = 'n.notification_type = ?';
+            $conditions[] = 'n.type = ?';
             $bindings[]   = $type;
         }
 
@@ -74,9 +74,10 @@ class NotificationController extends Controller
     public function send(Request $request, array $params = []): void
     {
         $errors = $this->validate($request, [
-            'title'             => 'required|max:255',
-            'message'           => 'required|max:1000',
-            'notification_type' => 'required|in:email,sms,push,in_app',
+            'title'   => 'required|max:255',
+            'message' => 'required|max:1000',
+            'type'    => 'required|in:transaction,security,account,loan,card,system,marketing,kyc',
+            'channel' => 'required|in:in_app,email,sms,push',
         ]);
 
         if (!empty($errors)) {
@@ -88,16 +89,16 @@ class NotificationController extends Controller
 
         if ($userId) {
             $db->prepare(
-                "INSERT INTO notifications (user_id, notification_type, title, message) VALUES (?,?,?,?)"
-            )->execute([$userId, $request->input('notification_type'), $request->input('title'), $request->input('message')]);
+                "INSERT INTO notifications (user_id, type, channel, title, message) VALUES (?,?,?,?,?)"
+            )->execute([$userId, $request->input('type'), $request->input('channel'), $request->input('title'), $request->input('message')]);
         } else {
             // Broadcast to all active users
             $users = $db->query("SELECT id FROM users WHERE is_active = 1")->fetchAll();
             $stmt  = $db->prepare(
-                "INSERT INTO notifications (user_id, notification_type, title, message) VALUES (?,?,?,?)"
+                "INSERT INTO notifications (user_id, type, channel, title, message) VALUES (?,?,?,?,?)"
             );
             foreach ($users as $u) {
-                $stmt->execute([$u['id'], $request->input('notification_type'), $request->input('title'), $request->input('message')]);
+                $stmt->execute([$u['id'], $request->input('type'), $request->input('channel'), $request->input('title'), $request->input('message')]);
             }
         }
 

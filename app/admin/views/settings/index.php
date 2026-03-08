@@ -75,13 +75,12 @@ ob_start(); ?>
             <div class="card-header fw-semibold">Permissions</div>
             <div class="table-responsive">
                 <table class="table admin-table">
-                    <thead><tr><th>#</th><th>Name</th><th>Category</th><th>Description</th></tr></thead>
+                    <thead><tr><th>#</th><th>Name</th><th>Description</th></tr></thead>
                     <tbody>
                     <?php foreach ($permissions as $p): ?>
                     <tr>
                         <td><?= $p['id'] ?></td>
                         <td class="fw-semibold text-mono small"><?= FormatHelper::e($p['name']) ?></td>
-                        <td><span class="badge text-bg-secondary"><?= FormatHelper::e($p['category']??'') ?></span></td>
                         <td class="text-muted small"><?= FormatHelper::e($p['description']??'') ?></td>
                     </tr>
                     <?php endforeach; ?>
@@ -101,7 +100,7 @@ ob_start(); ?>
                     <tbody>
                     <?php foreach ($countries as $c): ?>
                     <tr>
-                        <td class="fw-bold text-mono"><?= $c['iso_alpha2'] ?></td>
+                        <td class="fw-bold text-mono"><?= $c['iso_code'] ?></td>
                         <td><?= FormatHelper::e($c['name']) ?></td>
                         <td><?= $c['currency_code'] ?></td>
                         <td><i class="bi bi-check-circle-fill text-success"></i></td>
@@ -125,9 +124,13 @@ ob_start(); ?>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body row g-3">
-                    <div class="col-12">
+                    <div class="col-md-8">
                         <label class="form-label fw-semibold">Name</label>
                         <input type="text" name="name" class="form-control" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Code</label>
+                        <input type="text" name="code" class="form-control text-uppercase" maxlength="20" placeholder="e.g. CHK" required>
                     </div>
                     <div class="col-12">
                         <label class="form-label fw-semibold">Description</label>

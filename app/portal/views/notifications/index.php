@@ -23,7 +23,7 @@ ob_start(); ?>
     <div class="d-flex align-items-start gap-2">
         <div class="mt-1">
             <?php $iconMap = ['email'=>'envelope','sms'=>'chat-text','push'=>'phone','in_app'=>'bell']; ?>
-            <i class="bi bi-<?= $iconMap[$n['notification_type']??'bell']??'bell' ?> text-primary"></i>
+            <i class="bi bi-<?= $iconMap[$n['channel']??'in_app']??'bell' ?> text-primary"></i>
         </div>
         <div class="flex-grow-1">
             <div class="fw-semibold small"><?= $esc($n['title']??'') ?></div>

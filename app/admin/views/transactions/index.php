@@ -7,6 +7,14 @@ ob_start(); ?>
 
 <div class="d-flex align-items-center justify-content-between mb-3">
     <h1 class="page-title mb-0">Transactions</h1>
+    <div class="d-flex gap-2">
+        <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#depositModal">
+            <i class="bi bi-plus-circle me-1"></i>Deposit
+        </button>
+        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#transferModal">
+            <i class="bi bi-arrow-left-right me-1"></i>Transfer
+        </button>
+    </div>
 </div>
 
 <div class="card table-card">
@@ -66,6 +74,84 @@ ob_start(); ?>
         </ul></nav>
     </div>
     <?php endif; ?>
+</div>
+
+<!-- Deposit Modal -->
+<div class="modal fade" id="depositModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="/transactions/deposit" data-ajax="true" data-reload="true">
+                <?= \BnkApp\Middleware\CsrfMiddleware::field() ?>
+                <div class="modal-header">
+                    <h5 class="modal-title">Post Deposit</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Account ID</label>
+                        <input type="number" name="account_id" class="form-control" min="1" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Currency</label>
+                        <input type="text" name="currency_code" class="form-control text-uppercase" maxlength="3" value="EUR" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Amount</label>
+                        <input type="number" name="amount" class="form-control" step="0.01" min="0.01" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Description</label>
+                        <input type="text" name="description" class="form-control" maxlength="500" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success"><i class="bi bi-plus-circle me-1"></i>Post Deposit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Internal Transfer Modal -->
+<div class="modal fade" id="transferModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="/transactions/transfer" data-ajax="true" data-reload="true">
+                <?= \BnkApp\Middleware\CsrfMiddleware::field() ?>
+                <div class="modal-header">
+                    <h5 class="modal-title">Internal Transfer</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">From Account ID</label>
+                        <input type="number" name="from_account_id" class="form-control" min="1" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">To Account ID</label>
+                        <input type="number" name="to_account_id" class="form-control" min="1" required>
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label fw-semibold">Amount</label>
+                        <input type="number" name="amount" class="form-control" step="0.01" min="0.01" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Currency</label>
+                        <input type="text" name="currency_code" class="form-control text-uppercase" maxlength="3" value="EUR" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Description</label>
+                        <input type="text" name="description" class="form-control" maxlength="500">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-arrow-left-right me-1"></i>Execute Transfer</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 <?php $content = ob_get_clean(); require VIEWS_PATH . '/layouts/main.php';

@@ -33,10 +33,15 @@ ob_start(); ?>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-4">
         <div class="card h-100">
             <div class="card-header fw-semibold"><i class="bi bi-gear me-2 text-primary"></i>Actions</div>
             <div class="card-body d-flex flex-column gap-2">
+                <!-- Deposit -->
+                <button class="btn btn-success w-100" data-bs-toggle="modal" data-bs-target="#depositModal"
+                        <?= in_array($account['status'], ['closed','frozen']) ? 'disabled' : '' ?>>
+                    <i class="bi bi-plus-circle me-1"></i>Post Deposit
+                </button>
                 <form method="POST" action="/accounts/<?= $account['id'] ?>/freeze" data-ajax="true" data-reload="true">
                     <?= \BnkApp\Middleware\CsrfMiddleware::field() ?>
                     <input type="hidden" name="_method" value="PATCH">
@@ -80,6 +85,45 @@ ob_start(); ?>
                     </tbody>
                 </table>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Deposit Modal -->
+<div class="modal fade" id="depositModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="/transactions/deposit" data-ajax="true" data-reload="true">
+                <?= \BnkApp\Middleware\CsrfMiddleware::field() ?>
+                <input type="hidden" name="account_id" value="<?= $account['id'] ?>">
+                <div class="modal-header">
+                    <h5 class="modal-title">Post Deposit</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body row g-3">
+                    <div class="col-12">
+                        <label class="form-label fw-semibold" for="deposit-iban">Account</label>
+                        <input type="text" id="deposit-iban" class="form-control" value="<?= FormatHelper::e($account['iban']) ?>" readonly>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Amount</label>
+                        <input type="number" name="amount" class="form-control" step="0.01" min="0.01" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Currency</label>
+                        <input type="text" name="currency_code" class="form-control text-uppercase" maxlength="3"
+                               value="<?= FormatHelper::e($account['currency_code']) ?>" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Description</label>
+                        <input type="text" name="description" class="form-control" maxlength="500" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success"><i class="bi bi-plus-circle me-1"></i>Post Deposit</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

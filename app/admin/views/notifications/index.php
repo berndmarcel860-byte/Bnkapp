@@ -17,7 +17,7 @@ ob_start(); ?>
         <form method="GET" action="/notifications" class="d-flex gap-2 flex-wrap">
             <select name="type" class="form-select form-select-sm" style="width:auto">
                 <option value="">All Types</option>
-                <?php foreach (['email','sms','push','in_app'] as $t): ?>
+                <?php foreach (['transaction','security','account','loan','card','system','marketing','kyc'] as $t): ?>
                 <option value="<?= $t ?>" <?= ($filter['type']??'')===$t?'selected':'' ?>><?= ucfirst($t) ?></option>
                 <?php endforeach; ?>
             </select>
@@ -37,7 +37,7 @@ ob_start(); ?>
                 <tr>
                     <td><?= $n['id'] ?></td>
                     <td><?= FormatHelper::e($n['user_name']) ?></td>
-                    <td><span class="badge text-bg-info"><?= $n['notification_type'] ?></span></td>
+                    <td><span class="badge text-bg-info"><?= FormatHelper::e($n['type']) ?></span></td>
                     <td><?= FormatHelper::e(FormatHelper::truncate($n['title'],60)) ?></td>
                     <td><?= $n['is_read'] ? '<i class="bi bi-check-circle-fill text-success"></i>' : '<i class="bi bi-circle text-muted"></i>' ?></td>
                     <td class="text-muted small"><?= FormatHelper::dateTime($n['created_at']) ?></td>
@@ -65,10 +65,18 @@ ob_start(); ?>
                         <input type="number" name="user_id" class="form-control" placeholder="Leave blank = all users">
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold">Type</label>
-                        <select name="notification_type" class="form-select" required>
-                            <?php foreach (['in_app','email','sms','push'] as $t): ?>
-                            <option value="<?= $t ?>"><?= ucfirst($t) ?></option>
+                        <label class="form-label fw-semibold">Notification Type</label>
+                        <select name="type" class="form-select" required>
+                            <?php foreach (['account','transaction','security','loan','card','system','marketing','kyc'] as $t): ?>
+                            <option value="<?= $t ?>"><?= FormatHelper::titleCase($t) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Channel</label>
+                        <select name="channel" class="form-select" required>
+                            <?php foreach (['in_app','email','sms','push'] as $ch): ?>
+                            <option value="<?= $ch ?>"><?= FormatHelper::titleCase($ch) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
