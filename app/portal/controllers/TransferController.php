@@ -68,7 +68,7 @@ class TransferController extends Controller
     {
         $accounts     = $this->getMyAccounts();
         $beneficiaries = Database::getInstance()->prepare(
-            "SELECT * FROM beneficiaries WHERE user_id = ? ORDER BY beneficiary_name"
+            "SELECT * FROM beneficiaries WHERE user_id = ? ORDER BY account_holder_name"
         );
         $beneficiaries->execute([Auth::id()]);
 

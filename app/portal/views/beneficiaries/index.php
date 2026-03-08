@@ -21,7 +21,7 @@ ob_start(); ?>
     <div class="card border-0 shadow-sm">
         <div class="card-body d-flex justify-content-between align-items-center">
             <div>
-                <div class="fw-semibold"><?= $esc($b['beneficiary_name']) ?></div>
+                <div class="fw-semibold"><?= $esc($b['account_holder_name']) ?></div>
                 <div class="text-mono small text-muted"><?= $esc($b['iban']) ?>
                     <button class="btn btn-link p-0 ms-1 text-muted" data-copy="<?= $esc($b['iban']) ?>"><i class="bi bi-clipboard small"></i></button>
                 </div>
@@ -29,7 +29,7 @@ ob_start(); ?>
                 <?php if ($b['bank_name']): ?><div class="small text-muted"><?= $esc($b['bank_name']) ?></div><?php endif; ?>
             </div>
             <div class="d-flex gap-2">
-                <a href="/transfer/sepa?creditor_iban=<?= urlencode($b['iban']) ?>&creditor_name=<?= urlencode($b['beneficiary_name']) ?>"
+                <a href="/transfer/sepa?creditor_iban=<?= urlencode($b['iban']) ?>&creditor_name=<?= urlencode($b['account_holder_name']) ?>"
                    class="btn btn-sm btn-outline-primary"><i class="bi bi-send"></i></a>
                 <form method="POST" action="/beneficiaries/<?= $b['id'] ?>">
                     <?= \BnkPortal\Middleware\CsrfMiddleware::field() ?>
@@ -52,7 +52,7 @@ ob_start(); ?>
                 <?= \BnkPortal\Middleware\CsrfMiddleware::field() ?>
                 <div class="modal-header"><h5 class="modal-title">Add Beneficiary</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
                 <div class="modal-body row g-3">
-                    <div class="col-12"><label class="form-label fw-semibold">Name</label><input type="text" name="beneficiary_name" class="form-control" required></div>
+                    <div class="col-12"><label class="form-label fw-semibold">Name</label><input type="text" name="account_holder_name" class="form-control" required></div>
                     <div class="col-12"><label class="form-label fw-semibold">IBAN</label><input type="text" name="iban" class="form-control font-monospace" required></div>
                     <div class="col-6"><label class="form-label fw-semibold">BIC</label><input type="text" name="bic" class="form-control"></div>
                     <div class="col-6"><label class="form-label fw-semibold">Bank Name</label><input type="text" name="bank_name" class="form-control"></div>

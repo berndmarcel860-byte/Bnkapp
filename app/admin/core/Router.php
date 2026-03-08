@@ -73,6 +73,14 @@ class Router
         $method = $request->getMethod();
         $uri    = $request->getUri();
 
+        // Support HTML-form method override via a hidden _method POST field
+        if ($method === 'POST') {
+            $override = strtoupper((string)($request->input('_method') ?? ''));
+            if (in_array($override, ['PUT', 'PATCH', 'DELETE'], true)) {
+                $method = $override;
+            }
+        }
+
         foreach ($this->routes as $route) {
             if ($route['method'] !== $method) {
                 continue;

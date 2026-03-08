@@ -59,20 +59,21 @@ class StandingOrderController extends Controller
 
         $db->prepare(
             "INSERT INTO standing_orders
-                (from_account_id, to_iban, to_name, amount, currency_code, frequency,
-                 start_date, end_date, description, status, next_execution_date)
-             VALUES (?,?,?,?,?,?,?,?,?,'active',?)"
+                (from_account_id, to_iban, to_account_name, amount, currency_code, frequency,
+                 start_date, end_date, reference, status, next_execution_date, created_by)
+             VALUES (?,?,?,?,?,?,?,?,?,'active',?,?)"
         )->execute([
             $request->input('from_account_id'),
             strtoupper(str_replace(' ', '', (string)$request->input('to_iban', ''))),
-            $request->input('to_name'),
+            $request->input('to_account_name'),
             $request->input('amount'),
             $request->input('currency_code', 'EUR'),
             $request->input('frequency'),
             $request->input('start_date'),
             $request->input('end_date'),
-            $request->input('description'),
+            $request->input('reference'),
             $request->input('start_date'),
+            Auth::id(),
         ]);
 
         Session::flash('success', 'Standing order created.');

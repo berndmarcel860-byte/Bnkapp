@@ -19,7 +19,7 @@ ob_start(); ?>
     </div>
     <div class="table-responsive">
         <table class="table admin-table" id="rate-table">
-            <thead><tr><th>#</th><th>Base</th><th>Quote</th><th>Rate</th><th>Source</th><th>Effective Date</th></tr></thead>
+            <thead><tr><th>#</th><th>Base</th><th>Target</th><th>Rate</th><th>Source</th><th>Effective At</th></tr></thead>
             <tbody>
             <?php if (empty($rates)): ?>
                 <tr><td colspan="6" class="text-center text-muted py-4">No exchange rates configured.</td></tr>
@@ -28,10 +28,10 @@ ob_start(); ?>
                 <tr>
                     <td><?= $r['id'] ?></td>
                     <td class="fw-bold text-primary"><?= $r['base_currency'] ?></td>
-                    <td class="fw-bold"><?= $r['quote_currency'] ?></td>
+                    <td class="fw-bold"><?= $r['target_currency'] ?></td>
                     <td><?= number_format((float)$r['rate'], 6) ?></td>
                     <td><?= FormatHelper::e($r['source']??'manual') ?></td>
-                    <td><?= FormatHelper::date($r['effective_date']) ?></td>
+                    <td><?= FormatHelper::dateTime($r['effective_at']) ?></td>
                 </tr>
                 <?php endforeach; ?>
             <?php endif; ?>
@@ -56,16 +56,16 @@ ob_start(); ?>
                         <input type="text" name="base_currency" class="form-control text-uppercase" maxlength="3" value="EUR" required>
                     </div>
                     <div class="col-4">
-                        <label class="form-label fw-semibold">Quote</label>
-                        <input type="text" name="quote_currency" class="form-control text-uppercase" maxlength="3" required>
+                        <label class="form-label fw-semibold">Target</label>
+                        <input type="text" name="target_currency" class="form-control text-uppercase" maxlength="3" required>
                     </div>
                     <div class="col-4">
                         <label class="form-label fw-semibold">Rate</label>
                         <input type="number" name="rate" step="0.000001" class="form-control" required>
                     </div>
                     <div class="col-6">
-                        <label class="form-label fw-semibold">Effective Date</label>
-                        <input type="date" name="effective_date" class="form-control" value="<?= date('Y-m-d') ?>" required>
+                        <label class="form-label fw-semibold">Effective At</label>
+                        <input type="datetime-local" name="effective_at" class="form-control" value="<?= date('Y-m-d\TH:i') ?>" required>
                     </div>
                     <div class="col-6">
                         <label class="form-label fw-semibold">Source</label>

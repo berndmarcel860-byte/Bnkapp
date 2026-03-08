@@ -23,7 +23,7 @@ ob_start(); ?>
                 <div class="d-flex align-items-start justify-content-between">
                     <div>
                         <h6 class="fw-bold mb-1"><a href="/branches/<?= $b['id'] ?>"><?= FormatHelper::e($b['name']) ?></a></h6>
-                        <div class="text-mono small text-muted"><?= FormatHelper::e($b['sort_code']) ?></div>
+                        <div class="text-mono small text-muted"><?= FormatHelper::e($b['bank_code']) ?></div>
                     </div>
                     <?= $b['is_active'] ? '<span class="badge text-bg-success">Active</span>' : '<span class="badge text-bg-secondary">Inactive</span>' ?>
                 </div>
@@ -58,12 +58,16 @@ ob_start(); ?>
                         <input type="text" name="name" class="form-control" required>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label fw-semibold">Sort Code</label>
-                        <input type="text" name="sort_code" class="form-control" maxlength="20" required>
+                        <label class="form-label fw-semibold">Bank Code</label>
+                        <input type="text" name="bank_code" class="form-control" maxlength="20" required>
                     </div>
-                    <div class="col-12">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">BIC</label>
+                        <input type="text" name="bic" class="form-control text-uppercase" maxlength="11" required>
+                    </div>
+                    <div class="col-8">
                         <label class="form-label fw-semibold">Address</label>
-                        <input type="text" name="address_line1" class="form-control" placeholder="Street address">
+                        <input type="text" name="address" class="form-control" placeholder="Street address">
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold">City</label>
@@ -76,14 +80,6 @@ ob_start(); ?>
                     <div class="col-md-2">
                         <label class="form-label fw-semibold">Country ID</label>
                         <input type="number" name="country_id" class="form-control" required>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-semibold">Phone</label>
-                        <input type="tel" name="phone" class="form-control">
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-semibold">Email</label>
-                        <input type="email" name="email" class="form-control">
                     </div>
                 </div>
                 <div class="modal-footer">

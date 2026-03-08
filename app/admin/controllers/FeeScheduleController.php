@@ -25,7 +25,7 @@ class FeeScheduleController extends Controller
                FROM fee_schedules fs
                LEFT JOIN account_types at ON at.id = fs.account_type_id
               WHERE fs.is_active = 1
-              ORDER BY fs.transaction_type, fs.currency_code"
+              ORDER BY fs.fee_type, fs.currency_code"
         )->fetchAll();
 
         $this->view('fee-schedules.index', [
@@ -40,10 +40,12 @@ class FeeScheduleController extends Controller
     public function store(Request $request, array $params = []): void
     {
         $errors = $this->validate($request, [
-            'transaction_type' => 'required|max:50',
-            'flat_fee'         => 'required|numeric',
-            'percentage_fee'   => 'required|numeric',
-            'currency_code'    => 'required|max:3',
+            'name'           => 'required|max:100',
+            'fee_type'       => 'required|max:50',
+            'fixed_amount'   => 'required|numeric',
+            'percentage'     => 'required|numeric',
+            'currency_code'  => 'required|max:3',
+            'effective_from' => 'required',
         ]);
 
         if (!empty($errors)) {
@@ -53,16 +55,18 @@ class FeeScheduleController extends Controller
         $db = Database::getInstance();
         $db->prepare(
             "INSERT INTO fee_schedules
-                (account_type_id, transaction_type, currency_code, flat_fee, percentage_fee, min_fee, max_fee, is_active)
-             VALUES (?, ?, ?, ?, ?, ?, ?, 1)"
+                (name, account_type_id, fee_type, currency_code, fixed_amount, percentage, min_fee, max_fee, effective_from, is_active)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)"
         )->execute([
+            $request->input('name'),
             $request->input('account_type_id'),
-            $request->input('transaction_type'),
+            $request->input('fee_type'),
             strtoupper((string)$request->input('currency_code')),
-            $request->input('flat_fee'),
-            $request->input('percentage_fee'),
+            $request->input('fixed_amount'),
+            $request->input('percentage'),
             $request->input('min_fee') ?? 0,
             $request->input('max_fee'),
+            $request->input('effective_from'),
         ]);
 
         $this->success(['id' => $db->lastInsertId()], 'Fee schedule created.', HTTP_CREATED);
@@ -75,10 +79,10 @@ class FeeScheduleController extends Controller
     {
         $db = Database::getInstance();
         $db->prepare(
-            "UPDATE fee_schedules SET flat_fee=?, percentage_fee=?, min_fee=?, max_fee=?, is_active=? WHERE id=?"
+            "UPDATE fee_schedules SET fixed_amount=?, percentage=?, min_fee=?, max_fee=?, is_active=? WHERE id=?"
         )->execute([
-            $request->input('flat_fee'),
-            $request->input('percentage_fee'),
+            $request->input('fixed_amount'),
+            $request->input('percentage'),
             $request->input('min_fee') ?? 0,
             $request->input('max_fee'),
             $request->input('is_active', 1),

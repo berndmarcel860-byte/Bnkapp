@@ -18,7 +18,7 @@ class BeneficiaryController extends Controller
     public function index(Request $request, array $params = []): void
     {
         $stmt = Database::getInstance()->prepare(
-            "SELECT * FROM beneficiaries WHERE user_id = ? ORDER BY beneficiary_name"
+            "SELECT * FROM beneficiaries WHERE user_id = ? ORDER BY account_holder_name"
         );
         $stmt->execute([Auth::id()]);
 
@@ -32,8 +32,8 @@ class BeneficiaryController extends Controller
     {
         (new CsrfMiddleware())->handle($request);
         $errors = $this->validate($request, [
-            'beneficiary_name' => 'required|max:255',
-            'iban'             => 'required|max:34',
+            'account_holder_name' => 'required|max:140',
+            'iban'                => 'required|max:34',
         ]);
 
         if (!empty($errors)) {
@@ -42,11 +42,11 @@ class BeneficiaryController extends Controller
         }
 
         Database::getInstance()->prepare(
-            "INSERT INTO beneficiaries (user_id, beneficiary_name, iban, bic, bank_name)
+            "INSERT INTO beneficiaries (user_id, account_holder_name, iban, bic, bank_name)
              VALUES (?, ?, ?, ?, ?)"
         )->execute([
             Auth::id(),
-            $request->input('beneficiary_name'),
+            $request->input('account_holder_name'),
             strtoupper(str_replace(' ', '', (string)$request->input('iban', ''))),
             $request->input('bic'),
             $request->input('bank_name'),

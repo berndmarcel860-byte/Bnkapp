@@ -75,8 +75,9 @@ class BranchController extends Controller
     public function store(Request $request, array $params = []): void
     {
         $errors = $this->validate($request, [
-            'name'       => 'required|max:100',
-            'sort_code'  => 'required|max:20',
+            'name'       => 'required|max:255',
+            'bank_code'  => 'required|max:20',
+            'bic'        => 'required|max:11',
             'country_id' => 'required|numeric',
         ]);
 
@@ -86,17 +87,16 @@ class BranchController extends Controller
 
         $db = Database::getInstance();
         $db->prepare(
-            "INSERT INTO branches (name, sort_code, country_id, address_line1, city, postal_code, phone, email, is_active)
-             VALUES (?,?,?,?,?,?,?,?,1)"
+            "INSERT INTO branches (name, bank_code, bic, country_id, address, city, postal_code, is_active)
+             VALUES (?,?,?,?,?,?,?,1)"
         )->execute([
             $request->input('name'),
-            $request->input('sort_code'),
+            $request->input('bank_code'),
+            $request->input('bic'),
             $request->input('country_id'),
-            $request->input('address_line1'),
+            $request->input('address'),
             $request->input('city'),
             $request->input('postal_code'),
-            $request->input('phone'),
-            $request->input('email'),
         ]);
 
         $this->success(['id' => $db->lastInsertId()], 'Branch created.', HTTP_CREATED);
@@ -109,14 +109,12 @@ class BranchController extends Controller
     {
         $db = Database::getInstance();
         $db->prepare(
-            "UPDATE branches SET name=?, address_line1=?, city=?, postal_code=?, phone=?, email=?, is_active=? WHERE id=?"
+            "UPDATE branches SET name=?, address=?, city=?, postal_code=?, is_active=? WHERE id=?"
         )->execute([
             $request->input('name'),
-            $request->input('address_line1'),
+            $request->input('address'),
             $request->input('city'),
             $request->input('postal_code'),
-            $request->input('phone'),
-            $request->input('email'),
             $request->input('is_active', 1),
             $params['id'],
         ]);

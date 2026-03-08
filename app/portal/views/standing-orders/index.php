@@ -63,12 +63,12 @@ ob_start(); ?>
                         <select name="from_account_id" class="form-select" required></select>
                     </div>
                     <div class="col-12"><label class="form-label fw-semibold">To IBAN</label><input type="text" name="to_iban" class="form-control font-monospace" required></div>
-                    <div class="col-12"><label class="form-label fw-semibold">Beneficiary Name</label><input type="text" name="to_name" class="form-control"></div>
+                    <div class="col-12"><label class="form-label fw-semibold">Beneficiary Name</label><input type="text" name="to_account_name" class="form-control"></div>
                     <div class="col-6"><label class="form-label fw-semibold">Amount (EUR)</label><input type="number" name="amount" step="0.01" class="form-control" required></div>
                     <div class="col-6"><label class="form-label fw-semibold">Frequency</label>
                         <select name="frequency" class="form-select" required>
                             <option value="weekly">Weekly</option>
-                            <option value="bi_weekly">Bi-weekly</option>
+                            <option value="biweekly">Bi-weekly</option>
                             <option value="monthly" selected>Monthly</option>
                             <option value="quarterly">Quarterly</option>
                             <option value="annually">Annually</option>
@@ -76,7 +76,7 @@ ob_start(); ?>
                     </div>
                     <div class="col-6"><label class="form-label fw-semibold">Start Date</label><input type="date" name="start_date" class="form-control" required></div>
                     <div class="col-6"><label class="form-label fw-semibold">End Date <small class="text-muted">(optional)</small></label><input type="date" name="end_date" class="form-control"></div>
-                    <div class="col-12"><label class="form-label fw-semibold">Description</label><input type="text" name="description" class="form-control"></div>
+                    <div class="col-12"><label class="form-label fw-semibold">Description</label><input type="text" name="reference" class="form-control"></div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>

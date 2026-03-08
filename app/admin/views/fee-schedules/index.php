@@ -19,21 +19,22 @@ ob_start(); ?>
     </div>
     <div class="table-responsive">
         <table class="table admin-table" id="fee-table">
-            <thead><tr><th>#</th><th>Account Type</th><th>Transaction Type</th><th>Currency</th><th>Flat Fee</th><th>% Fee</th><th>Min Fee</th><th>Max Fee</th><th>Active</th></tr></thead>
+            <thead><tr><th>#</th><th>Name</th><th>Account Type</th><th>Fee Type</th><th>Currency</th><th>Fixed Fee</th><th>% Fee</th><th>Min Fee</th><th>Max Fee</th><th>Active</th></tr></thead>
             <tbody>
             <?php if (empty($fees)): ?>
-                <tr><td colspan="9" class="text-center text-muted py-4">No fee schedules configured.</td></tr>
+                <tr><td colspan="10" class="text-center text-muted py-4">No fee schedules configured.</td></tr>
             <?php else: ?>
                 <?php foreach ($fees as $f): ?>
                 <tr>
                     <td><?= $f['id'] ?></td>
+                    <td><?= FormatHelper::e($f['name']??'') ?></td>
                     <td><?= FormatHelper::e($f['account_type_name']??'All') ?></td>
-                    <td><?= FormatHelper::titleCase($f['transaction_type']) ?></td>
+                    <td><?= FormatHelper::titleCase($f['fee_type']) ?></td>
                     <td><?= $f['currency_code']??'*' ?></td>
-                    <td><?= FormatHelper::money((float)$f['flat_fee']) ?></td>
-                    <td><?= number_format((float)$f['percentage_fee'],4) ?>%</td>
-                    <td><?= FormatHelper::money((float)$f['min_fee']) ?></td>
-                    <td><?= $f['max_fee'] ? FormatHelper::money((float)$f['max_fee']) : '—' ?></td>
+                    <td><?= FormatHelper::money((float)($f['fixed_amount']??0)) ?></td>
+                    <td><?= number_format((float)($f['percentage']??0),4) ?>%</td>
+                    <td><?= FormatHelper::money((float)($f['min_fee']??0)) ?></td>
+                    <td><?= ($f['max_fee'] ?? null) ? FormatHelper::money((float)$f['max_fee']) : '—' ?></td>
                     <td><?= $f['is_active'] ? '<span class="badge text-bg-success">Yes</span>' : '<span class="badge text-bg-secondary">No</span>' ?></td>
                 </tr>
                 <?php endforeach; ?>
@@ -55,16 +56,25 @@ ob_start(); ?>
                 </div>
                 <div class="modal-body row g-3">
                     <div class="col-12">
-                        <label class="form-label fw-semibold">Transaction Type</label>
-                        <input type="text" name="transaction_type" class="form-control" placeholder="e.g. sepa_credit_transfer" required>
+                        <label class="form-label fw-semibold">Name</label>
+                        <input type="text" name="name" class="form-control" placeholder="e.g. SEPA Transfer Fee" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Fee Type</label>
+                        <select name="fee_type" class="form-select" required>
+                            <option value="">Select type…</option>
+                            <?php foreach (['transaction','maintenance','overdraft','card_issuance','wire_transfer','atm_withdrawal','fx_conversion','late_payment'] as $ft): ?>
+                            <option value="<?= $ft ?>"><?= FormatHelper::titleCase($ft) ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                     <div class="col-6">
-                        <label class="form-label fw-semibold">Flat Fee (EUR)</label>
-                        <input type="number" name="flat_fee" step="0.0001" class="form-control" value="0" required>
+                        <label class="form-label fw-semibold">Fixed Fee (EUR)</label>
+                        <input type="number" name="fixed_amount" step="0.01" class="form-control" value="0" required>
                     </div>
                     <div class="col-6">
-                        <label class="form-label fw-semibold">Percentage Fee (%)</label>
-                        <input type="number" name="percentage_fee" step="0.0001" class="form-control" value="0" required>
+                        <label class="form-label fw-semibold">Percentage Fee</label>
+                        <input type="number" name="percentage" step="0.0001" class="form-control" value="0" required>
                     </div>
                     <div class="col-6">
                         <label class="form-label fw-semibold">Min Fee (EUR)</label>
@@ -77,6 +87,10 @@ ob_start(); ?>
                     <div class="col-6">
                         <label class="form-label fw-semibold">Currency</label>
                         <input type="text" name="currency_code" class="form-control" value="EUR" maxlength="3" required>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-semibold">Effective From</label>
+                        <input type="date" name="effective_from" class="form-control" value="<?= date('Y-m-d') ?>" required>
                     </div>
                 </div>
                 <div class="modal-footer">

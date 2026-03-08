@@ -22,7 +22,7 @@ class ExchangeRateController extends Controller
         $db   = Database::getInstance();
         $rows = $db->query(
             "SELECT * FROM exchange_rates
-              ORDER BY base_currency, quote_currency, effective_date DESC"
+              ORDER BY base_currency, target_currency, effective_at DESC"
         )->fetchAll();
 
         $this->view('exchange-rates.index', [
@@ -38,9 +38,9 @@ class ExchangeRateController extends Controller
     {
         $errors = $this->validate($request, [
             'base_currency'   => 'required|max:3',
-            'quote_currency'  => 'required|max:3',
+            'target_currency' => 'required|max:3',
             'rate'            => 'required|numeric',
-            'effective_date'  => 'required',
+            'effective_at'    => 'required',
         ]);
 
         if (!empty($errors)) {
@@ -49,14 +49,14 @@ class ExchangeRateController extends Controller
 
         $db = Database::getInstance();
         $db->prepare(
-            "INSERT INTO exchange_rates (base_currency, quote_currency, rate, source, effective_date)
+            "INSERT INTO exchange_rates (base_currency, target_currency, rate, source, effective_at)
              VALUES (?, ?, ?, ?, ?)"
         )->execute([
             strtoupper((string)$request->input('base_currency')),
-            strtoupper((string)$request->input('quote_currency')),
+            strtoupper((string)$request->input('target_currency')),
             $request->input('rate'),
             $request->input('source', 'manual'),
-            $request->input('effective_date'),
+            $request->input('effective_at'),
         ]);
 
         $this->success(['id' => $db->lastInsertId()], 'Exchange rate added.', HTTP_CREATED);
