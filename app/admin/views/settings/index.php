@@ -7,20 +7,125 @@ ob_start(); ?>
 
 <div class="mb-4">
     <h1 class="page-title mb-0">Settings</h1>
-    <p class="text-muted small">System configuration — roles, permissions, account types, countries.</p>
+    <p class="text-muted small">System configuration — roles, permissions, account types, countries, SMTP.</p>
 </div>
 
 <!-- Nav tabs -->
 <ul class="nav nav-tabs mb-4" role="tablist">
-    <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tab-account-types">Account Types</a></li>
+    <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tab-smtp">SMTP / Email</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-account-types">Account Types</a></li>
     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-roles">Roles</a></li>
     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-permissions">Permissions</a></li>
     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-countries">SEPA Countries</a></li>
 </ul>
 
 <div class="tab-content">
-    <!-- Account Types -->
-    <div class="tab-pane fade show active" id="tab-account-types">
+
+    <!-- ── SMTP / Email ─────────────────────────────────────────────────── -->
+    <div class="tab-pane fade show active" id="tab-smtp">
+        <div class="card">
+            <div class="card-header fw-semibold d-flex align-items-center gap-2">
+                <i class="bi bi-envelope-at text-primary"></i> SMTP Mail Settings
+            </div>
+            <div class="card-body">
+
+                <?php
+                $testOk    = $smtp['last_test_ok'] ?? null;
+                $testError = $smtp['last_test_error'] ?? null;
+                $testedAt  = $smtp['last_tested_at']  ?? null;
+                ?>
+
+                <?php if ($testedAt !== null): ?>
+                <div class="alert alert-<?= $testOk ? 'success' : 'danger' ?> d-flex align-items-center gap-2 py-2">
+                    <i class="bi bi-<?= $testOk ? 'check-circle' : 'x-circle' ?>"></i>
+                    <span>
+                        Last test (<?= htmlspecialchars($testedAt, ENT_QUOTES, 'UTF-8') ?>):
+                        <?= $testOk ? 'Connection OK' : htmlspecialchars((string)$testError, ENT_QUOTES, 'UTF-8') ?>
+                    </span>
+                </div>
+                <?php endif; ?>
+
+                <form method="POST" action="/settings/smtp" data-ajax="true" data-reload="false" id="smtp-form">
+                    <?= \BnkApp\Middleware\CsrfMiddleware::field() ?>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">SMTP Host</label>
+                            <input type="text" name="host" class="form-control"
+                                   value="<?= htmlspecialchars($smtp['host'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                                   placeholder="smtp.example.com">
+                            <div class="form-text">Leave blank to use PHP <code>mail()</code> instead of SMTP.</div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Port</label>
+                            <input type="number" name="port" class="form-control" min="1" max="65535"
+                                   value="<?= (int)($smtp['port'] ?? 587) ?>"
+                                   required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Encryption</label>
+                            <select name="encryption" class="form-select">
+                                <?php foreach (['tls' => 'STARTTLS (TLS)', 'ssl' => 'SSL/TLS', 'none' => 'None'] as $val => $label): ?>
+                                <option value="<?= $val ?>" <?= ($smtp['encryption'] ?? 'tls') === $val ? 'selected' : '' ?>>
+                                    <?= $label ?>
+                                </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">SMTP Username</label>
+                            <input type="text" name="username" class="form-control" autocomplete="username"
+                                   value="<?= htmlspecialchars($smtp['username'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                                   placeholder="user@example.com">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">SMTP Password</label>
+                            <div class="input-group">
+                                <input type="password" name="password" class="form-control" autocomplete="new-password"
+                                       placeholder="Leave blank to keep existing password">
+                                <button type="button" class="btn btn-outline-secondary" data-toggle-pwd>
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">From Address</label>
+                            <input type="email" name="from_address" class="form-control"
+                                   value="<?= htmlspecialchars($smtp['from_address'] ?? 'noreply@example.com', ENT_QUOTES, 'UTF-8') ?>"
+                                   required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">From Name</label>
+                            <input type="text" name="from_name" class="form-control"
+                                   value="<?= htmlspecialchars($smtp['from_name'] ?? 'BnkApp', ENT_QUOTES, 'UTF-8') ?>"
+                                   required>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-floppy me-1"></i>Save Settings
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="smtpTestBtn">
+                            <i class="bi bi-send-check me-1"></i>Test Connection
+                        </button>
+                    </div>
+                </form>
+
+            </div><!-- /card-body -->
+        </div><!-- /card -->
+
+        <div class="alert alert-info mt-3 small">
+            <i class="bi bi-info-circle me-1"></i>
+            <strong>PHPMailer</strong> is used to deliver all transactional emails.
+            SMTP credentials are stored in the <code>smtp_settings</code> table.
+            Environment variables (<code>MAIL_HOST</code>, <code>MAIL_USER</code>, etc.) act as fallbacks
+            when no host is configured here.
+        </div>
+    </div><!-- /#tab-smtp -->
+
+    <!-- ── Account Types ───────────────────────────────────────────────── -->
+    <div class="tab-pane fade" id="tab-account-types">
         <div class="card table-card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <span class="fw-semibold">Account Types</span>
@@ -157,5 +262,66 @@ ob_start(); ?>
         </div>
     </div>
 </div>
+
+<script>
+// ── SMTP test connection button ──────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function () {
+    const testBtn = document.getElementById('smtpTestBtn');
+    if (testBtn) {
+        testBtn.addEventListener('click', function () {
+            testBtn.disabled = true;
+            testBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Testing…';
+
+            const form  = document.getElementById('smtp-form');
+            const token = form.querySelector('[name="_csrf_token"]');
+
+            fetch('/settings/smtp/test', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: new URLSearchParams({
+                    _csrf_token: token ? token.value : ''
+                }),
+            })
+            .then(r => r.json())
+            .then(json => {
+                const cls = json.success ? 'success' : 'danger';
+                const msg = json.message || (json.success ? 'Connection OK' : 'Connection failed');
+                showAlert(cls, msg);
+            })
+            .catch(() => showAlert('danger', 'Request failed.'))
+            .finally(() => {
+                testBtn.disabled = false;
+                testBtn.innerHTML = '<i class="bi bi-send-check me-1"></i>Test Connection';
+            });
+        });
+    }
+
+    function showAlert(type, msg) {
+        const existing = document.getElementById('smtp-test-alert');
+        if (existing) existing.remove();
+        const el = document.createElement('div');
+        el.id = 'smtp-test-alert';
+        el.className = `alert alert-${type} alert-dismissible fade show mt-3`;
+        el.innerHTML = `<i class="bi bi-${type === 'success' ? 'check-circle' : 'x-circle'} me-1"></i>${msg}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+        document.getElementById('smtp-form').after(el);
+    }
+
+    // ── Password show/hide ──────────────────────────────────────────────
+    document.querySelectorAll('[data-toggle-pwd]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            const inp  = btn.closest('.input-group').querySelector('input');
+            const icon = btn.querySelector('i');
+            if (inp.type === 'password') {
+                inp.type = 'text';
+                if (icon) { icon.className = 'bi bi-eye-slash'; }
+            } else {
+                inp.type = 'password';
+                if (icon) { icon.className = 'bi bi-eye'; }
+            }
+        });
+    });
+});
+</script>
 
 <?php $content = ob_get_clean(); require VIEWS_PATH . '/layouts/main.php';

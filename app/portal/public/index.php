@@ -40,6 +40,15 @@ define('HTTP_NOT_FOUND',           404);
 define('HTTP_UNPROCESSABLE_ENTITY',422);
 define('HTTP_INTERNAL_ERROR',      500);
 
+// ---------------------------------------------------------------------------
+// Composer autoloader (PHPMailer and any future Composer packages)
+// ---------------------------------------------------------------------------
+$_composerAutoload = realpath(__DIR__ . '/../../../../vendor/autoload.php');
+if ($_composerAutoload !== false && file_exists($_composerAutoload)) {
+    require_once $_composerAutoload;
+}
+unset($_composerAutoload);
+
 require CORE_PATH . '/App.php';
 
 (new \BnkPortal\Core\App())->run();

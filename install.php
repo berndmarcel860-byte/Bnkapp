@@ -190,6 +190,8 @@ function ajaxRunMigrations(): array
         '02_functions.sql' => 'Functions & stored procedures',
         '03_indexes.sql'   => 'Indexes',
         '04_seed.sql'      => 'Seed data (roles, permissions, countries)',
+        '05_email_templates.sql' => 'Email templates',
+        '06_smtp_settings.sql'   => 'SMTP settings table',
     ];
 
     $allOk = true;
@@ -1172,10 +1174,12 @@ function renderStep3(bool $dbSaved, bool $migDone): string
     $nextDisabled = $migDone ? '' : 'disabled';
 
     $files = [
-        ['01_schema.sql',    'Schema — 27 tables'],
-        ['02_functions.sql', 'Functions & stored procedures'],
-        ['03_indexes.sql',   'Performance indexes'],
-        ['04_seed.sql',      'Seed data (roles, permissions, SEPA countries)'],
+        ['01_schema.sql',          'Schema — 27 tables'],
+        ['02_functions.sql',       'Functions & stored procedures'],
+        ['03_indexes.sql',         'Performance indexes'],
+        ['04_seed.sql',            'Seed data (roles, permissions, SEPA countries)'],
+        ['05_email_templates.sql', 'Email templates'],
+        ['06_smtp_settings.sql',   'SMTP settings table'],
     ];
     $fileList = '';
     foreach ($files as [$f, $d]) {

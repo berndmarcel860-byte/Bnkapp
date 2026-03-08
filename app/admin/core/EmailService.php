@@ -1,44 +1,86 @@
 <?php
 /**
- * BnkApp Admin — Email Service
+ * BnkApp Admin — Email Service (PHPMailer)
  *
- * Loads templates from the `email_templates` table, interpolates
- * {{variable}} placeholders, and sends HTML emails.
+ * Loads SMTP credentials from the `smtp_settings` table (id = 1).
+ * Falls back to environment variables for compatibility when no DB row
+ * has been configured yet.
  *
- * Transport: SMTP (env vars) with fall-back to PHP mail().
- *
- * Environment variables:
- *   MAIL_FROM_ADDRESS  — sender address (default: noreply@bnkapp.example)
- *   MAIL_FROM_NAME     — sender name    (default: BnkApp)
- *   MAIL_HOST          — SMTP host      (omit to use mail())
- *   MAIL_PORT          — SMTP port      (default: 587)
- *   MAIL_USER          — SMTP username
- *   MAIL_PASS          — SMTP password
- *   MAIL_ENCRYPTION    — tls | ssl      (default: tls)
+ * Environment-variable fallbacks:
+ *   MAIL_FROM_ADDRESS  MAIL_FROM_NAME
+ *   MAIL_HOST          MAIL_PORT          MAIL_ENCRYPTION
+ *   MAIL_USER          MAIL_PASS
  */
 declare(strict_types=1);
 
 namespace BnkApp\Core;
 
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\SMTP;
+use PHPMailer\PHPMailer\Exception as PHPMailerException;
+
 class EmailService
 {
-    private string $fromAddress;
-    private string $fromName;
-    private ?string $smtpHost;
-    private int    $smtpPort;
-    private string $smtpUser;
-    private string $smtpPass;
-    private string $encryption;
+    private string  $fromAddress;
+    private string  $fromName;
+    private string  $smtpHost;
+    private int     $smtpPort;
+    private string  $smtpUser;
+    private string  $smtpPass;
+    private string  $encryption; // 'tls' | 'ssl' | 'none' | ''
 
     public function __construct()
     {
-        $this->fromAddress = getenv('MAIL_FROM_ADDRESS') ?: 'noreply@bnkapp.example';
-        $this->fromName    = getenv('MAIL_FROM_NAME')    ?: 'BnkApp';
-        $this->smtpHost    = getenv('MAIL_HOST')         ?: null;
-        $this->smtpPort    = (int)(getenv('MAIL_PORT')   ?: 587);
-        $this->smtpUser    = (string)(getenv('MAIL_USER') ?: '');
-        $this->smtpPass    = (string)(getenv('MAIL_PASS') ?: '');
-        $this->encryption  = strtolower((string)(getenv('MAIL_ENCRYPTION') ?: 'tls'));
+        $this->loadSettings();
+    }
+
+    // ------------------------------------------------------------------
+    // Settings loader
+    // ------------------------------------------------------------------
+
+    /**
+     * Load SMTP config from the smtp_settings table (row id = 1).
+     * Falls back to env vars when the table row is empty or unavailable.
+     */
+    private function loadSettings(): void
+    {
+        $row = $this->fetchSettingsRow();
+
+        // Decide whether to use DB values or env vars
+        $dbHost = trim((string)($row['host'] ?? ''));
+
+        if ($dbHost !== '') {
+            // DB-configured SMTP
+            $this->fromAddress = (string)($row['from_address'] ?? 'noreply@example.com');
+            $this->fromName    = (string)($row['from_name']    ?? 'BnkApp');
+            $this->smtpHost    = $dbHost;
+            $this->smtpPort    = (int)($row['port'] ?? 587);
+            $this->smtpUser    = (string)($row['username'] ?? '');
+            $this->smtpPass    = (string)($row['password'] ?? '');
+            $this->encryption  = strtolower((string)($row['encryption'] ?? 'tls'));
+        } else {
+            // Env-var fallback
+            $this->fromAddress = getenv('MAIL_FROM_ADDRESS') ?: 'noreply@bnkapp.example';
+            $this->fromName    = getenv('MAIL_FROM_NAME')    ?: 'BnkApp';
+            $this->smtpHost    = (string)(getenv('MAIL_HOST') ?: '');
+            $this->smtpPort    = (int)(getenv('MAIL_PORT')   ?: 587);
+            $this->smtpUser    = (string)(getenv('MAIL_USER') ?: '');
+            $this->smtpPass    = (string)(getenv('MAIL_PASS') ?: '');
+            $this->encryption  = strtolower((string)(getenv('MAIL_ENCRYPTION') ?: 'tls'));
+        }
+    }
+
+    private function fetchSettingsRow(): array
+    {
+        try {
+            $db   = Database::getInstance();
+            $stmt = $db->prepare("SELECT * FROM smtp_settings WHERE id = 1 LIMIT 1");
+            $stmt->execute();
+            $row = $stmt->fetch();
+            return is_array($row) ? $row : [];
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     // ------------------------------------------------------------------
@@ -46,14 +88,8 @@ class EmailService
     // ------------------------------------------------------------------
 
     /**
-     * Send an email using a template slug.
+     * Send an email using a stored template slug.
      * Variables are interpolated as {{variable_name}}.
-     *
-     * @param string $slug      Template slug (email_templates.slug)
-     * @param string $toAddress Recipient email address
-     * @param string $toName    Recipient name
-     * @param array  $vars      Associative array of placeholder values
-     * @return bool             True on success, false on failure
      */
     public function sendTemplate(
         string $slug,
@@ -70,7 +106,7 @@ class EmailService
         $bodyHtml = $this->interpolate($template['body_html'], $vars);
         $bodyText = $template['body_text']
             ? $this->interpolate($template['body_text'], $vars)
-            : $this->htmlToText($bodyHtml);
+            : '';
 
         return $this->send($toAddress, $toName, $subject, $bodyHtml, $bodyText);
     }
@@ -89,19 +125,166 @@ class EmailService
             return false;
         }
 
-        if ($bodyText === '') {
-            $bodyText = $this->htmlToText($bodyHtml);
-        }
-
         try {
-            if ($this->smtpHost !== null && $this->smtpHost !== '') {
-                return $this->sendViaSMTP($toAddress, $toName, $subject, $bodyHtml, $bodyText);
-            }
-            return $this->sendViaMail($toAddress, $toName, $subject, $bodyHtml, $bodyText);
+            return $this->sendViaPHPMailer($toAddress, $toName, $subject, $bodyHtml, $bodyText);
         } catch (\Throwable $e) {
             error_log('[EmailService] Send failed: ' . $e->getMessage());
             return false;
         }
+    }
+
+    // ------------------------------------------------------------------
+    // PHPMailer transport
+    // ------------------------------------------------------------------
+
+    private function sendViaPHPMailer(
+        string $toAddress,
+        string $toName,
+        string $subject,
+        string $bodyHtml,
+        string $bodyText
+    ): bool {
+        $this->requirePhpMailer();
+
+        $mail = new PHPMailer(true);
+        $mail->CharSet = PHPMailer::CHARSET_UTF8;
+        $mail->Encoding = PHPMailer::ENCODING_QUOTED_PRINTABLE;
+
+        if ($this->smtpHost !== '') {
+            // Use SMTP
+            $mail->isSMTP();
+            $mail->Host       = $this->smtpHost;
+            $mail->Port       = $this->smtpPort;
+
+            // SMTPSecure
+            $mail->SMTPSecure = match ($this->encryption) {
+                'ssl'  => PHPMailer::ENCRYPTION_SMTPS,
+                'tls'  => PHPMailer::ENCRYPTION_STARTTLS,
+                default => '',
+            };
+
+            if ($this->smtpUser !== '') {
+                $mail->SMTPAuth = true;
+                $mail->Username = $this->smtpUser;
+                $mail->Password = $this->smtpPass;
+            }
+        } else {
+            // Fall back to PHP mail()
+            $mail->isMail();
+        }
+
+        $mail->setFrom($this->fromAddress, $this->fromName);
+        $mail->addAddress($toAddress, $toName);
+        $mail->Subject = $subject;
+        $mail->isHTML(true);
+        $mail->Body    = $bodyHtml;
+        $mail->AltBody = $bodyText !== '' ? $bodyText : $this->htmlToText($bodyHtml);
+
+        $mail->send();
+        return true;
+    }
+
+    /**
+     * Bootstrap the PHPMailer autoloader if needed.
+     * Supports both a project-root vendor/ (composer install) and a
+     * vendor/ that sits relative to the admin directory.
+     */
+    private function requirePhpMailer(): void
+    {
+        if (class_exists(PHPMailer::class, false)) {
+            return;
+        }
+
+        $candidates = [
+            // Project root vendor (composer install in repo root)
+            realpath(__DIR__ . '/../../../vendor/autoload.php'),
+            // Vendor next to the admin directory
+            realpath(__DIR__ . '/../../vendor/autoload.php'),
+        ];
+
+        foreach ($candidates as $path) {
+            if ($path !== false && file_exists($path)) {
+                require_once $path;
+                return;
+            }
+        }
+
+        throw new \RuntimeException(
+            'PHPMailer not found. Run: composer require phpmailer/phpmailer'
+        );
+    }
+
+    // ------------------------------------------------------------------
+    // Test SMTP connection
+    // ------------------------------------------------------------------
+
+    /**
+     * Attempt to connect to the SMTP server, verify credentials, and
+     * persist the result in smtp_settings.
+     *
+     * @return array{ok: bool, message: string}
+     */
+    public function testSmtpConnection(): array
+    {
+        $this->requirePhpMailer();
+
+        $ok      = false;
+        $message = '';
+
+        try {
+            if ($this->smtpHost === '') {
+                throw new \RuntimeException('No SMTP host configured.');
+            }
+
+            $smtp = new SMTP();
+            $smtp->Timeout = 10;
+
+            $secure = match ($this->encryption) {
+                'ssl'  => 'ssl',
+                default => '',
+            };
+
+            if (!$smtp->connect($this->smtpHost, $this->smtpPort, 10, $secure)) {
+                throw new \RuntimeException('Could not connect to SMTP server.');
+            }
+
+            // EHLO
+            $smtp->hello(gethostname());
+
+            // STARTTLS
+            if ($this->encryption === 'tls') {
+                $smtp->startTLS();
+                $smtp->hello(gethostname());
+            }
+
+            // Auth
+            if ($this->smtpUser !== '') {
+                if (!$smtp->authenticate($this->smtpUser, $this->smtpPass)) {
+                    throw new \RuntimeException('SMTP authentication failed.');
+                }
+            }
+
+            $smtp->quit();
+            $ok      = true;
+            $message = 'Connection and authentication successful.';
+
+        } catch (\Throwable $e) {
+            $message = $e->getMessage();
+        }
+
+        // Persist test result
+        try {
+            $db = Database::getInstance();
+            $db->prepare(
+                "UPDATE smtp_settings
+                    SET last_tested_at = NOW(), last_test_ok = ?, last_test_error = ?
+                  WHERE id = 1"
+            )->execute([$ok ? 1 : 0, $ok ? null : $message]);
+        } catch (\Throwable) {
+            // Non-fatal — do not mask the actual result
+        }
+
+        return ['ok' => $ok, 'message' => $message];
     }
 
     // ------------------------------------------------------------------
@@ -115,178 +298,10 @@ class EmailService
             $stmt = $db->prepare("SELECT * FROM email_templates WHERE slug = ? LIMIT 1");
             $stmt->execute([$slug]);
             $row = $stmt->fetch();
-            return $row !== false ? $row : null;
-        } catch (\PDOException $e) {
+            return is_array($row) ? $row : null;
+        } catch (\Throwable $e) {
             error_log('[EmailService] Template load failed: ' . $e->getMessage());
             return null;
-        }
-    }
-
-    // ------------------------------------------------------------------
-    // Interpolation
-    // ------------------------------------------------------------------
-
-    private function interpolate(string $template, array $vars): string
-    {
-        foreach ($vars as $key => $value) {
-            $template = str_replace('{{' . $key . '}}', (string)$value, $template);
-        }
-        // Remove any unreplaced placeholders
-        return (string)preg_replace('/\{\{[a-zA-Z0-9_]+\}\}/', '', $template);
-    }
-
-    // ------------------------------------------------------------------
-    // PHP mail() transport
-    // ------------------------------------------------------------------
-
-    private function sendViaMail(
-        string $toAddress,
-        string $toName,
-        string $subject,
-        string $bodyHtml,
-        string $bodyText
-    ): bool {
-        $boundary = 'bnkapp_' . bin2hex(random_bytes(12));
-        $from     = $this->encodeHeader($this->fromName) . ' <' . $this->fromAddress . '>';
-        $to       = $this->encodeHeader($toName) . ' <' . $toAddress . '>';
-
-        $headers  = "From: {$from}\r\n";
-        $headers .= "Reply-To: {$this->fromAddress}\r\n";
-        $headers .= "MIME-Version: 1.0\r\n";
-        $headers .= "Content-Type: multipart/alternative; boundary=\"{$boundary}\"\r\n";
-        $headers .= "X-Mailer: BnkApp/1.0\r\n";
-
-        $body  = "--{$boundary}\r\n";
-        $body .= "Content-Type: text/plain; charset=UTF-8\r\n";
-        $body .= "Content-Transfer-Encoding: quoted-printable\r\n\r\n";
-        $body .= quoted_printable_encode($bodyText) . "\r\n";
-        $body .= "--{$boundary}\r\n";
-        $body .= "Content-Type: text/html; charset=UTF-8\r\n";
-        $body .= "Content-Transfer-Encoding: quoted-printable\r\n\r\n";
-        $body .= quoted_printable_encode($bodyHtml) . "\r\n";
-        $body .= "--{$boundary}--";
-
-        return mail($to, $this->encodeHeader($subject), $body, $headers);
-    }
-
-    // ------------------------------------------------------------------
-    // SMTP transport (native sockets — no external dependencies)
-    // ------------------------------------------------------------------
-
-    private function sendViaSMTP(
-        string $toAddress,
-        string $toName,
-        string $subject,
-        string $bodyHtml,
-        string $bodyText
-    ): bool {
-        $host       = $this->smtpHost;
-        $port       = $this->smtpPort;
-        $encryption = $this->encryption;
-
-        // Build socket address
-        $socketAddr = match ($encryption) {
-            'ssl'  => "ssl://{$host}:{$port}",
-            default => "{$host}:{$port}",
-        };
-
-        $errno  = 0;
-        $errstr = '';
-        $socket = fsockopen($socketAddr, $port, $errno, $errstr, 10);
-        if ($socket === false) {
-            throw new \RuntimeException("SMTP connect failed ({$errno}): {$errstr}");
-        }
-
-        stream_set_timeout($socket, 15);
-
-        $this->smtpExpect($socket, 220);
-        $this->smtpSend($socket, "EHLO " . gethostname());
-        $ehloResponse = $this->smtpRead($socket);
-
-        // STARTTLS upgrade
-        if ($encryption === 'tls' && str_contains($ehloResponse, 'STARTTLS')) {
-            $this->smtpSend($socket, 'STARTTLS');
-            $this->smtpExpect($socket, 220);
-            stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
-            $this->smtpSend($socket, "EHLO " . gethostname());
-            $this->smtpRead($socket);
-        }
-
-        // AUTH LOGIN
-        if ($this->smtpUser !== '') {
-            $this->smtpSend($socket, 'AUTH LOGIN');
-            $this->smtpExpect($socket, 334);
-            $this->smtpSend($socket, base64_encode($this->smtpUser));
-            $this->smtpExpect($socket, 334);
-            $this->smtpSend($socket, base64_encode($this->smtpPass));
-            $this->smtpExpect($socket, 235);
-        }
-
-        // Envelope
-        $this->smtpSend($socket, "MAIL FROM:<{$this->fromAddress}>");
-        $this->smtpExpect($socket, 250);
-        $this->smtpSend($socket, "RCPT TO:<{$toAddress}>");
-        $this->smtpExpect($socket, [250, 251]);
-
-        // DATA
-        $this->smtpSend($socket, 'DATA');
-        $this->smtpExpect($socket, 354);
-
-        $boundary = 'bnkapp_' . bin2hex(random_bytes(12));
-        $msgId    = bin2hex(random_bytes(16)) . '@' . gethostname();
-        $date     = date('r');
-
-        $message  = "Date: {$date}\r\n";
-        $message .= "Message-ID: <{$msgId}>\r\n";
-        $message .= "From: " . $this->encodeHeader($this->fromName) . " <{$this->fromAddress}>\r\n";
-        $message .= "To: " . $this->encodeHeader($toName) . " <{$toAddress}>\r\n";
-        $message .= "Subject: " . $this->encodeHeader($subject) . "\r\n";
-        $message .= "MIME-Version: 1.0\r\n";
-        $message .= "Content-Type: multipart/alternative; boundary=\"{$boundary}\"\r\n";
-        $message .= "X-Mailer: BnkApp/1.0\r\n\r\n";
-
-        $message .= "--{$boundary}\r\n";
-        $message .= "Content-Type: text/plain; charset=UTF-8\r\n";
-        $message .= "Content-Transfer-Encoding: quoted-printable\r\n\r\n";
-        $message .= quoted_printable_encode($bodyText) . "\r\n";
-        $message .= "--{$boundary}\r\n";
-        $message .= "Content-Type: text/html; charset=UTF-8\r\n";
-        $message .= "Content-Transfer-Encoding: quoted-printable\r\n\r\n";
-        $message .= quoted_printable_encode($bodyHtml) . "\r\n";
-        $message .= "--{$boundary}--\r\n";
-        $message .= '.';
-
-        fwrite($socket, $message . "\r\n");
-        $this->smtpExpect($socket, 250);
-
-        $this->smtpSend($socket, 'QUIT');
-        fclose($socket);
-        return true;
-    }
-
-    private function smtpSend($socket, string $command): void
-    {
-        fwrite($socket, $command . "\r\n");
-    }
-
-    private function smtpRead($socket): string
-    {
-        $response = '';
-        while ($line = fgets($socket, 512)) {
-            $response .= $line;
-            if ($line[3] === ' ') break; // last line of multi-line response
-        }
-        return $response;
-    }
-
-    /** @param int|int[] $expected */
-    private function smtpExpect($socket, int|array $expected): void
-    {
-        $response = $this->smtpRead($socket);
-        $code     = (int)substr($response, 0, 3);
-        $expected = (array)$expected;
-        if (!in_array($code, $expected, true)) {
-            throw new \RuntimeException("Unexpected SMTP response (expected " . implode('/', $expected) . "): {$response}");
         }
     }
 
@@ -294,12 +309,12 @@ class EmailService
     // Utilities
     // ------------------------------------------------------------------
 
-    private function encodeHeader(string $value): string
+    private function interpolate(string $template, array $vars): string
     {
-        if (preg_match('/[^\x20-\x7E]/', $value)) {
-            return '=?UTF-8?B?' . base64_encode($value) . '?=';
+        foreach ($vars as $key => $value) {
+            $template = str_replace('{{' . $key . '}}', (string)$value, $template);
         }
-        return $value;
+        return (string)preg_replace('/\{\{[a-zA-Z0-9_]+\}\}/', '', $template);
     }
 
     private function htmlToText(string $html): string

@@ -208,8 +208,10 @@ class App
         $r->post( '/support/{id}/reply', 'SupportController@reply',  ['AuthMiddleware']);
 
         // ---- Settings ----
-        $r->get( '/settings',                       'SettingsController@index',           ['AuthMiddleware', 'RoleMiddleware']);
-        $r->post('/settings/account-types',         'SettingsController@storeAccountType', ['AuthMiddleware', 'RoleMiddleware']);
+        $r->get(  '/settings',                      'SettingsController@index',            ['AuthMiddleware', 'RoleMiddleware']);
+        $r->post( '/settings/account-types',        'SettingsController@storeAccountType', ['AuthMiddleware', 'RoleMiddleware']);
+        $r->post( '/settings/smtp',                 'SettingsController@saveSmtp',         ['AuthMiddleware', 'RoleMiddleware']);
+        $r->post( '/settings/smtp/test',            'SettingsController@testSmtp',         ['AuthMiddleware', 'RoleMiddleware']);
 
         // ---- Email Templates ----
         $r->get(   '/email-templates',              'EmailTemplateController@index',   ['AuthMiddleware', 'RoleMiddleware']);

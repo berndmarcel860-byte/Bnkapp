@@ -1,0 +1,16 @@
+{
+    "name": "bnkapp/bnkapp",
+    "description": "BnkApp — Digital Banking Platform",
+    "type": "project",
+    "require": {
+        "php": ">=8.1",
+        "phpmailer/phpmailer": "^7.0"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    },
+    "autoload": {
+        "psr-4": {}
+    }
+}

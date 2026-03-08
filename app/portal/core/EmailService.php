@@ -31,11 +31,24 @@ class EmailService
     }
 
     /**
-     * Load the database bridge and the shared admin EmailService class,
-     * if they have not already been loaded in this request.
+     * Load the composer autoloader (for PHPMailer), the database bridge,
+     * and the shared admin EmailService class, if they have not already
+     * been loaded in this request.
      */
     private function bootstrap(): void
     {
+        // Composer autoloader (PHPMailer lives here)
+        $autoloaders = [
+            realpath(__DIR__ . '/../../../../vendor/autoload.php'),
+            realpath(__DIR__ . '/../../../vendor/autoload.php'),
+        ];
+        foreach ($autoloaders as $al) {
+            if ($al !== false && file_exists($al) && !class_exists(\PHPMailer\PHPMailer\PHPMailer::class, false)) {
+                require_once $al;
+                break;
+            }
+        }
+
         if (!class_exists(\BnkApp\Core\Database::class, false)) {
             require_once __DIR__ . '/bridge/DatabaseBridge.php';
         }

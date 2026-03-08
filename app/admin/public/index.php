@@ -47,6 +47,15 @@ if (!is_dir(LOGS_PATH)) {
 }
 
 // ---------------------------------------------------------------------------
+// Composer autoloader (PHPMailer and any future Composer packages)
+// ---------------------------------------------------------------------------
+$_composerAutoload = realpath(__DIR__ . '/../../../vendor/autoload.php');
+if ($_composerAutoload !== false && file_exists($_composerAutoload)) {
+    require_once $_composerAutoload;
+}
+unset($_composerAutoload);
+
+// ---------------------------------------------------------------------------
 // Boot the application
 // ---------------------------------------------------------------------------
 require CORE_PATH . '/App.php';
