@@ -1,0 +1,9 @@
+# app/ — Application directory
+# Direct web access to this directory is not permitted.
+# Web server document roots must point to app/admin/public/ or app/portal/public/.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^ - [F,L]
+</IfModule>
+
+Options -Indexes

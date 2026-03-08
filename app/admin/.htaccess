@@ -1,0 +1,9 @@
+# Redirect all traffic to public/ (the web root).
+# This file belongs in the project root of admin/ when deployed on Apache.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# Deny direct access to everything outside public/
+Options -Indexes

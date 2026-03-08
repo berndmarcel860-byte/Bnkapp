@@ -1,0 +1,302 @@
+/* ==========================================================================
+   BnkApp Admin — Custom Stylesheet
+   Works on top of Bootstrap 5.3
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   CSS Custom Properties
+   -------------------------------------------------------------------------- */
+:root {
+  --admin-sidebar-width: 260px;
+  --admin-sidebar-collapsed-width: 0px;
+  --admin-topbar-height: 58px;
+
+  --admin-primary:      #0d6efd;
+  --admin-sidebar-bg:   #0f172a;
+  --admin-sidebar-text: #94a3b8;
+  --admin-sidebar-link-hover-bg: rgba(255,255,255,.06);
+  --admin-sidebar-link-active-bg: rgba(13,110,253,.2);
+  --admin-sidebar-link-active-color: #60a5fa;
+  --admin-topbar-bg:    #ffffff;
+  --admin-content-bg:   #f1f5f9;
+
+  --admin-border-radius: .5rem;
+  --admin-card-shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+  --admin-card-shadow-hover: 0 4px 16px rgba(0,0,0,.12);
+}
+
+/* --------------------------------------------------------------------------
+   Base layout
+   -------------------------------------------------------------------------- */
+html, body { height: 100%; }
+
+body.admin-layout {
+  display: flex;
+  background-color: var(--admin-content-bg);
+  font-size: .9rem;
+  overflow-x: hidden;
+}
+
+/* --------------------------------------------------------------------------
+   Sidebar
+   -------------------------------------------------------------------------- */
+#sidebar {
+  width: var(--admin-sidebar-width);
+  min-width: var(--admin-sidebar-width);
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  background-color: var(--admin-sidebar-bg);
+  color: var(--admin-sidebar-text);
+  transition: width .25s ease, min-width .25s ease;
+  z-index: 1030;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+#sidebar.collapsed {
+  width: 0;
+  min-width: 0;
+}
+
+.sidebar-brand { border-bottom: 1px solid rgba(255,255,255,.08); }
+.sidebar-brand-text { color: #e2e8f0; letter-spacing: .02em; }
+
+.sidebar-avatar {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--admin-primary), #6366f1);
+  color: #fff; font-size: .75rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.sidebar-user-name { color: #cbd5e1; font-size: .82rem; }
+
+.sidebar-section-label {
+  padding: .6rem 1rem .25rem;
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  color: #475569;
+  text-transform: uppercase;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  padding: .45rem .85rem;
+  border-radius: var(--admin-border-radius);
+  color: var(--admin-sidebar-text);
+  font-size: .85rem;
+  font-weight: 500;
+  transition: background .15s, color .15s;
+  white-space: nowrap;
+}
+
+.sidebar-link i { font-size: 1rem; flex-shrink: 0; }
+.sidebar-link span { overflow: hidden; text-overflow: ellipsis; }
+
+.sidebar-link:hover {
+  background-color: var(--admin-sidebar-link-hover-bg);
+  color: #e2e8f0;
+}
+
+.sidebar-link.active {
+  background-color: var(--admin-sidebar-link-active-bg);
+  color: var(--admin-sidebar-link-active-color);
+  font-weight: 600;
+}
+
+.sidebar-nav-wrapper::-webkit-scrollbar { width: 4px; }
+.sidebar-nav-wrapper::-webkit-scrollbar-track { background: transparent; }
+.sidebar-nav-wrapper::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+
+/* --------------------------------------------------------------------------
+   Main wrapper + topbar
+   -------------------------------------------------------------------------- */
+.main-wrapper {
+  flex: 1 1 0%;
+  min-width: 0;
+  max-height: 100vh;
+  overflow-y: auto;
+}
+
+.topbar {
+  height: var(--admin-topbar-height);
+  background-color: var(--admin-topbar-bg);
+  border-bottom: 1px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+  flex-shrink: 0;
+}
+
+.topbar-avatar {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--admin-primary), #6366f1);
+  color: #fff; font-size: .7rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.page-content { background-color: var(--admin-content-bg); min-height: calc(100vh - var(--admin-topbar-height) - 40px); }
+
+.page-footer { background-color: var(--admin-topbar-bg); border-top: 1px solid #e2e8f0; font-size: .78rem; }
+
+/* --------------------------------------------------------------------------
+   Stat / KPI cards
+   -------------------------------------------------------------------------- */
+.stat-card {
+  border: none;
+  border-radius: var(--admin-border-radius);
+  box-shadow: var(--admin-card-shadow);
+  transition: box-shadow .2s;
+  overflow: hidden;
+}
+
+.stat-card:hover { box-shadow: var(--admin-card-shadow-hover); }
+
+.stat-card .stat-icon {
+  width: 48px; height: 48px;
+  border-radius: .4rem;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem;
+}
+
+.stat-card .stat-value { font-size: 1.6rem; font-weight: 700; line-height: 1.2; }
+.stat-card .stat-label { font-size: .78rem; color: #64748b; font-weight: 500; text-transform: uppercase; letter-spacing: .05em; }
+.stat-card .stat-change { font-size: .78rem; }
+
+/* --------------------------------------------------------------------------
+   Data tables
+   -------------------------------------------------------------------------- */
+.table-card {
+  border: none;
+  border-radius: var(--admin-border-radius);
+  box-shadow: var(--admin-card-shadow);
+  overflow: hidden;
+}
+
+.table-card .card-header {
+  background-color: #fff;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 1rem 1.25rem;
+}
+
+.admin-table { margin-bottom: 0; font-size: .85rem; }
+.admin-table thead th {
+  background-color: #f8fafc;
+  border-bottom: 2px solid #e2e8f0;
+  font-weight: 600;
+  font-size: .75rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: #475569;
+  white-space: nowrap;
+  padding: .75rem 1rem;
+}
+.admin-table td { padding: .7rem 1rem; vertical-align: middle; border-color: #f1f5f9; }
+.admin-table tbody tr:hover { background-color: #f8fafc; }
+.admin-table .text-mono { font-family: 'Courier New', monospace; font-size: .82rem; }
+
+/* --------------------------------------------------------------------------
+   Badges
+   -------------------------------------------------------------------------- */
+.badge { font-weight: 600; font-size: .72em; letter-spacing: .03em; }
+
+/* --------------------------------------------------------------------------
+   Forms
+   -------------------------------------------------------------------------- */
+.form-control:focus, .form-select:focus {
+  border-color: var(--admin-primary);
+  box-shadow: 0 0 0 .2rem rgba(13,110,253,.15);
+}
+
+/* --------------------------------------------------------------------------
+   Auth page
+   -------------------------------------------------------------------------- */
+body.auth-page { background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%); }
+
+.auth-wrapper { width: 100%; max-width: 420px; padding: 1rem; }
+
+.auth-brand-icon i { font-size: 2.5rem; }
+.auth-brand-name { color: #fff; }
+
+.auth-card { border-radius: var(--admin-border-radius) !important; }
+
+/* --------------------------------------------------------------------------
+   Page header + toolbar
+   -------------------------------------------------------------------------- */
+.page-title { font-size: 1.25rem; font-weight: 700; color: #1e293b; }
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem;
+  margin-bottom: 1rem;
+}
+
+/* --------------------------------------------------------------------------
+   Report cards (landing page)
+   -------------------------------------------------------------------------- */
+.report-card {
+  display: block;
+  padding: 1.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--admin-border-radius);
+  background: #fff;
+  text-decoration: none;
+  color: inherit;
+  box-shadow: var(--admin-card-shadow);
+  transition: box-shadow .2s, transform .15s;
+}
+.report-card:hover {
+  box-shadow: var(--admin-card-shadow-hover);
+  transform: translateY(-2px);
+  text-decoration: none;
+  color: inherit;
+}
+.report-card-icon { font-size: 2rem; margin-bottom: .75rem; }
+.report-card-title { font-weight: 700; margin-bottom: .25rem; }
+.report-card-desc { font-size: .83rem; color: #64748b; }
+
+/* --------------------------------------------------------------------------
+   User portal overrides (shared classes for portal/ layout)
+   -------------------------------------------------------------------------- */
+body.portal-layout {
+  background-color: #f8fafc;
+  font-size: .9rem;
+}
+
+.portal-sidebar {
+  background: linear-gradient(180deg, #1e40af 0%, #1e3a8a 100%);
+  width: var(--admin-sidebar-width);
+  min-width: var(--admin-sidebar-width);
+}
+
+.portal-sidebar .sidebar-link { color: rgba(255,255,255,.75); }
+.portal-sidebar .sidebar-link:hover { color: #fff; background: rgba(255,255,255,.1); }
+.portal-sidebar .sidebar-link.active { color: #fff; background: rgba(255,255,255,.2); }
+.portal-sidebar .sidebar-section-label { color: rgba(255,255,255,.4); }
+
+/* --------------------------------------------------------------------------
+   Utility helpers
+   -------------------------------------------------------------------------- */
+.cursor-pointer { cursor: pointer; }
+.fs-7 { font-size: .8rem !important; }
+.min-w-0 { min-width: 0; }
+.text-mono { font-family: 'Courier New', monospace; }
+
+/* --------------------------------------------------------------------------
+   Responsive
+   -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  #sidebar { width: 0; min-width: 0; position: fixed; height: 100%; }
+  #sidebar.mobile-open { width: var(--admin-sidebar-width); min-width: var(--admin-sidebar-width); }
+  .main-wrapper { width: 100%; }
+  .topbar { padding: 0 .75rem; }
+  .page-content { padding: 1rem !important; }
+}
