@@ -10,15 +10,11 @@ class App
 {
     private Router $router;
 
-    public function __construct()
-    {
-        $this->router = new Router();
-    }
-
     public function run(): void
     {
         $this->configure();
         $this->registerAutoloader();
+        $this->router = new Router();
         Session::start();
         $this->sendSecurityHeaders();
         $this->registerRoutes();
