@@ -17,7 +17,11 @@ ob_start(); ?>
                     <label class="form-label fw-semibold">From Account</label>
                     <select name="from_account_id" class="form-select" required>
                         <?php foreach ($accounts as $a): ?>
-                        <option value="<?= $a['id'] ?>"><?= $esc($a['iban']) ?> (<?= $fmt((float)$a['balance'],$a['currency_code']) ?>)</option>
+                        <option value="<?= $a['id'] ?>"
+                                data-balance="<?= htmlspecialchars((string)$a['balance'], ENT_QUOTES, 'UTF-8') ?>"
+                                data-currency="<?= htmlspecialchars($a['currency_code'], ENT_QUOTES, 'UTF-8') ?>">
+                            <?= $esc($a['iban']) ?> (<?= $fmt((float)$a['balance'],$a['currency_code']) ?>)
+                        </option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -57,6 +61,7 @@ ob_start(); ?>
                         <span class="input-group-text">€</span>
                         <input type="number" name="amount" class="form-control" step="0.01" min="0.01" required>
                     </div>
+                    <div class="form-text text-muted" data-balance-hint></div>
                 </div>
                 <div class="col-12">
                     <label class="form-label fw-semibold">Remittance Information</label>

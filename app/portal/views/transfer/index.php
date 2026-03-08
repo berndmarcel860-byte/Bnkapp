@@ -17,7 +17,10 @@ ob_start(); ?>
                         <label class="form-label fw-semibold">From Account</label>
                         <select name="from_account_id" class="form-select" required>
                             <?php foreach ($accounts as $a): ?>
-                            <option value="<?= $a['id'] ?>" <?= (($_GET['from']??'')==$a['id'])?'selected':'' ?>>
+                            <option value="<?= $a['id'] ?>"
+                                    data-balance="<?= htmlspecialchars((string)$a['balance'], ENT_QUOTES, 'UTF-8') ?>"
+                                    data-currency="<?= htmlspecialchars($a['currency_code'], ENT_QUOTES, 'UTF-8') ?>"
+                                    <?= (($_GET['from']??'')==$a['id'])?'selected':'' ?>>
                                 <?= $esc($a['iban']) ?> (<?= $fmt((float)$a['balance'],$a['currency_code']) ?>)
                             </option>
                             <?php endforeach; ?>
@@ -33,6 +36,7 @@ ob_start(); ?>
                             <span class="input-group-text">€</span>
                             <input type="number" name="amount" class="form-control" step="0.01" min="0.01" required>
                         </div>
+                        <div class="form-text text-muted" data-balance-hint></div>
                     </div>
                     <div class="mb-4">
                         <label class="form-label fw-semibold">Description</label>

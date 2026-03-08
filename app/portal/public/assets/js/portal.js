@@ -82,4 +82,34 @@ document.querySelectorAll('[data-toggle-pwd]').forEach(function (btn) {
   });
 })();
 
+// Account balance hint — updates "Available: €X" near the amount field
+// when the user picks a different source account.
+(function () {
+  var selects = document.querySelectorAll('select[name="from_account_id"]');
+  selects.forEach(function (sel) {
+    var hint = sel.closest('form').querySelector('[data-balance-hint]');
+    if (!hint) return;
+
+    function updateHint() {
+      var opt = sel.options[sel.selectedIndex];
+      if (opt && opt.dataset.balance !== undefined) {
+        var bal  = parseFloat(opt.dataset.balance);
+        var cur  = opt.dataset.currency || 'EUR';
+        try {
+          var fmt = new Intl.NumberFormat('en-GB', { style: 'currency', currency: cur });
+          hint.textContent = 'Available: ' + fmt.format(bal);
+        } catch (_) {
+          hint.textContent = 'Available: ' + bal.toFixed(2) + ' ' + cur;
+        }
+        hint.style.display = '';
+      } else {
+        hint.style.display = 'none';
+      }
+    }
+
+    sel.addEventListener('change', updateHint);
+    updateHint(); // run once on page load
+  });
+})();
+
 console.info('[BnkApp Portal] JS loaded.');
