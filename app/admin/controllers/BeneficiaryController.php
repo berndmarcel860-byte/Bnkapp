@@ -25,7 +25,7 @@ class BeneficiaryController extends Controller
         $bindings   = [];
 
         if ($search !== '') {
-            $conditions[] = "(b.beneficiary_name LIKE ? OR b.iban LIKE ?)";
+            $conditions[] = "(b.account_holder_name LIKE ? OR b.iban LIKE ?)";
             $bindings[]   = "%{$search}%";
             $bindings[]   = "%{$search}%";
         }
@@ -77,7 +77,7 @@ class BeneficiaryController extends Controller
         }
 
         $this->view('beneficiaries.show', [
-            'title'       => "Beneficiary — {$ben['beneficiary_name']}",
+            'title'       => "Beneficiary — {$ben['account_holder_name']}",
             'beneficiary' => $ben,
         ]);
     }

@@ -61,6 +61,9 @@ class KycController extends Controller
             $this->redirect('/kyc');
         }
 
+        $fileHash = hash_file('sha256', $file['tmp_name']);
+        $mimeType = mime_content_type($file['tmp_name']) ?: 'application/octet-stream'; // RFC 2046 default binary MIME type
+
         // Store file reference (actual file storage implementation depends on hosting)
         $fileName = 'kyc_' . Auth::id() . '_' . time() . '.' . $ext;
         $uploadPath = PORTAL_ROOT . '/storage/kyc/' . $fileName;
@@ -75,13 +78,15 @@ class KycController extends Controller
         }
 
         Database::getInstance()->prepare(
-            "INSERT INTO kyc_documents (user_id, document_type, document_number, file_path, expiry_date, status)
-             VALUES (?, ?, ?, ?, ?, 'pending')"
+            "INSERT INTO kyc_documents (user_id, document_type, file_path, file_hash, mime_type, file_size_bytes, expiry_date, status)
+             VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')"
         )->execute([
             Auth::id(),
             $request->input('document_type'),
-            $request->input('document_number'),
             $fileName,
+            $fileHash,
+            $mimeType,
+            $file['size'],
             $request->input('expiry_date') ?: null,
         ]);
 

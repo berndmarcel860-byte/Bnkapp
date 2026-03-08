@@ -21,8 +21,6 @@ ob_start(); ?>
                     <dd class="col-8"><a href="/users/<?= $doc['user_id'] ?>"><?= FormatHelper::e($doc['owner_name']) ?></a> — <?= FormatHelper::e($doc['owner_email']) ?></dd>
                     <dt class="col-4 text-muted">Type</dt>
                     <dd class="col-8"><?= FormatHelper::titleCase($doc['document_type']) ?></dd>
-                    <dt class="col-4 text-muted">Document #</dt>
-                    <dd class="col-8 text-mono"><?= FormatHelper::e($doc['document_number']??'—') ?></dd>
                     <dt class="col-4 text-muted">Expiry</dt>
                     <dd class="col-8"><?= FormatHelper::date($doc['expiry_date']??'') ?></dd>
                     <dt class="col-4 text-muted">Submitted</dt>

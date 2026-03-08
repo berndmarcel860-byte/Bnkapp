@@ -21,7 +21,7 @@ class LoanController extends Controller
         $stmt = $db->prepare(
             "SELECT l.*, ba.iban AS disbursement_iban
                FROM loans l
-               LEFT JOIN bank_accounts ba ON ba.id = l.disbursement_account_id
+               LEFT JOIN bank_accounts ba ON ba.id = l.account_id
               WHERE l.user_id = ?
               ORDER BY l.created_at DESC"
         );
@@ -60,10 +60,10 @@ class LoanController extends Controller
     {
         (new CsrfMiddleware())->handle($request);
         $errors = $this->validate($request, [
-            'loan_type'               => 'required',
-            'principal_amount'        => 'required|numeric',
-            'term_months'             => 'required|numeric',
-            'disbursement_account_id' => 'required|numeric',
+            'loan_type'        => 'required',
+            'principal_amount' => 'required|numeric',
+            'term_months'      => 'required|numeric',
+            'account_id'       => 'required|numeric',
         ]);
 
         if (!empty($errors)) {
@@ -73,15 +73,17 @@ class LoanController extends Controller
 
         Database::getInstance()->prepare(
             "INSERT INTO loans
-                (user_id, loan_type, principal_amount, outstanding_balance, term_months, disbursement_account_id, status)
-             VALUES (?, ?, ?, ?, ?, ?, 'applied')"
+                (user_id, account_id, loan_type, principal_amount, outstanding_balance,
+                 interest_rate, term_months, monthly_payment, status)
+             VALUES (?, ?, ?, ?, ?, 0, ?, 0, 'applied')"
+            // interest_rate=0 and monthly_payment=0 are placeholders; admin sets actual values on approval
         )->execute([
             Auth::id(),
+            $request->input('account_id'),
             $request->input('loan_type'),
             $request->input('principal_amount'),
             $request->input('principal_amount'),
             $request->input('term_months'),
-            $request->input('disbursement_account_id'),
         ]);
 
         Session::flash('success', 'Loan application submitted. We will review it shortly.');

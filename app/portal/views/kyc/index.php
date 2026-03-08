@@ -31,7 +31,7 @@ $sc = $statusColors[$userStatus['kyc_status']??'pending'] ?? 'secondary';
         <form method="POST" action="/kyc/upload" enctype="multipart/form-data">
             <?= \BnkPortal\Middleware\CsrfMiddleware::field() ?>
             <div class="row g-3">
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <label class="form-label fw-semibold">Document Type</label>
                     <select name="document_type" class="form-select" required>
                         <option value="national_id">National ID</option>
@@ -42,11 +42,7 @@ $sc = $statusColors[$userStatus['kyc_status']??'pending'] ?? 'secondary';
                         <option value="bank_statement">Bank Statement</option>
                     </select>
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label fw-semibold">Document Number <small class="text-muted">(optional)</small></label>
-                    <input type="text" name="document_number" class="form-control">
-                </div>
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <label class="form-label fw-semibold">Expiry Date <small class="text-muted">(optional)</small></label>
                     <input type="date" name="expiry_date" class="form-control">
                 </div>

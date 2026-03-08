@@ -16,7 +16,7 @@ ob_start(); ?>
             <div class="card-header fw-semibold">Beneficiary Details</div>
             <div class="card-body">
                 <dl class="row small mb-0">
-                    <dt class="col-5 text-muted">Name</dt><dd class="col-7 fw-semibold"><?= FormatHelper::e($beneficiary['beneficiary_name']) ?></dd>
+                    <dt class="col-5 text-muted">Name</dt><dd class="col-7 fw-semibold"><?= FormatHelper::e($beneficiary['account_holder_name']) ?></dd>
                     <dt class="col-5 text-muted">IBAN</dt><dd class="col-7 text-mono"><?= FormatHelper::e($beneficiary['iban']) ?></dd>
                     <dt class="col-5 text-muted">BIC</dt><dd class="col-7 text-mono"><?= FormatHelper::e($beneficiary['bic']??'—') ?></dd>
                     <dt class="col-5 text-muted">Bank</dt><dd class="col-7"><?= FormatHelper::e($beneficiary['bank_name']??'—') ?></dd>

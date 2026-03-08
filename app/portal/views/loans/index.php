@@ -58,7 +58,7 @@ ob_start(); ?>
                     </div>
                     <div class="col-6"><label class="form-label fw-semibold">Amount (EUR)</label><input type="number" name="principal_amount" step="0.01" min="100" class="form-control" required></div>
                     <div class="col-6"><label class="form-label fw-semibold">Term (months)</label><input type="number" name="term_months" min="1" max="360" class="form-control" required></div>
-                    <div class="col-12"><label class="form-label fw-semibold">Disbursement Account ID</label><input type="number" name="disbursement_account_id" class="form-control" required></div>
+                    <div class="col-12"><label class="form-label fw-semibold">Account ID <small class="text-muted">(for disbursement)</small></label><input type="number" name="account_id" class="form-control" required></div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>

@@ -27,8 +27,8 @@ ob_start(); ?>
                     <select class="form-select" id="benSelect" onchange="fillBen(this)">
                         <option value="">-- Select a saved beneficiary --</option>
                         <?php foreach ($beneficiaries as $b): ?>
-                        <option value="<?= $esc($b['iban']) ?>" data-name="<?= $esc($b['beneficiary_name']) ?>">
-                            <?= $esc($b['beneficiary_name']) ?> — <?= $esc($b['iban']) ?>
+                        <option value="<?= $esc($b['iban']) ?>" data-name="<?= $esc($b['account_holder_name']) ?>">
+                            <?= $esc($b['account_holder_name']) ?> — <?= $esc($b['iban']) ?>
                         </option>
                         <?php endforeach; ?>
                     </select>

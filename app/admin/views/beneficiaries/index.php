@@ -31,7 +31,7 @@ ob_start(); ?>
                 <?php foreach ($beneficiaries as $b): ?>
                 <tr>
                     <td><?= $b['id'] ?></td>
-                    <td class="fw-semibold"><?= FormatHelper::e($b['beneficiary_name']) ?></td>
+                    <td class="fw-semibold"><?= FormatHelper::e($b['account_holder_name']) ?></td>
                     <td class="text-mono small"><?= FormatHelper::e($b['iban']) ?></td>
                     <td class="text-mono small"><?= FormatHelper::e($b['bic']??'—') ?></td>
                     <td><?= FormatHelper::e($b['bank_name']??'—') ?></td>
