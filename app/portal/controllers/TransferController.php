@@ -9,6 +9,7 @@ namespace BnkPortal\Controllers;
 use BnkPortal\Core\Auth;
 use BnkPortal\Core\Controller;
 use BnkPortal\Core\Database;
+use BnkPortal\Core\EmailService;
 use BnkPortal\Core\Request;
 use BnkPortal\Core\Session;
 use BnkPortal\Middleware\CsrfMiddleware;
@@ -150,10 +151,12 @@ class TransferController extends Controller
 
         // External SEPA: debit sender and record as sepa_credit_transfer
         $db->beginTransaction();
+        $fmt = new \NumberFormatter('en_GB', \NumberFormatter::CURRENCY);
         try {
             // Fetch and lock sender account
             $accStmt = $db->prepare(
                 "SELECT ba.iban, ba.available_balance, ba.status,
+                        ba.account_type_id,
                         CONCAT(u.first_name, ' ', u.last_name) AS owner_name
                    FROM bank_accounts ba
                    JOIN users u ON u.id = ba.user_id
@@ -171,7 +174,18 @@ class TransferController extends Controller
                 throw new \RuntimeException('Source account is not active.');
             }
 
-            if ((float)$sender['available_balance'] < $amount) {
+            // Look up applicable SEPA/wire transfer fee from fee_schedules
+            $feeAmount = $this->lookupFee($db, (int)($sender['account_type_id'] ?? 0), $amount);
+
+            $totalDebit = $amount + $feeAmount;
+
+            if ((float)$sender['available_balance'] < $totalDebit) {
+                if ($feeAmount > 0) {
+                    throw new \RuntimeException(
+                        'Insufficient available balance. A transfer fee of ' .
+                        $fmt->formatCurrency($feeAmount, $currency) . ' applies.'
+                    );
+                }
                 throw new \RuntimeException('Insufficient available balance.');
             }
 
@@ -180,8 +194,9 @@ class TransferController extends Controller
                 date('Ymd'),
                 strtoupper(substr(bin2hex(random_bytes(8)), 0, 12))
             );
-            $feeAmount = 0.00;
-            $netAmount = $amount - $feeAmount;
+            // Fee is charged on top of the transfer amount.
+            // net_amount = what the creditor receives (full transfer amount).
+            $netAmount = $amount;
 
             // Insert transaction
             $txnStmt = $db->prepare(
@@ -226,18 +241,44 @@ class TransferController extends Controller
                 $remittance,
             ]);
 
-            // Debit sender
+            // Debit sender (amount + fee)
             $db->prepare(
                 "UPDATE bank_accounts
                     SET balance           = balance           - ?,
                         available_balance = available_balance - ?,
                         last_transaction_at = NOW()
                   WHERE id = ?"
-            )->execute([$amount, $amount, $fromId]);
+            )->execute([$totalDebit, $totalDebit, $fromId]);
 
             $db->commit();
 
-            Session::flash('success', 'SEPA transfer submitted successfully.');
+            // Send confirmation email to customer
+            $userStmt = $db->prepare("SELECT email, CONCAT(first_name,' ',last_name) AS full_name FROM users WHERE id = ? LIMIT 1");
+            $userStmt->execute([Auth::id()]);
+            $user = $userStmt->fetch();
+            if ($user) {
+                try {
+                    (new EmailService())->sendTemplate('transfer_submitted', $user['email'], $user['full_name'], [
+                        'customer_name' => $user['full_name'],
+                        'amount'        => $fmt->formatCurrency($amount, $currency),
+                        'fee'           => $fmt->formatCurrency($feeAmount, $currency),
+                        'from_iban'     => $sender['iban'],
+                        'to_iban'       => $creditorIban,
+                        'creditor_name' => (string)($request->input('creditor_name') ?? ''),
+                        'reference'     => $txnRef,
+                        'status'        => 'Pending',
+                    ]);
+                } catch (\Throwable) {
+                    // Non-fatal — do not prevent redirect on email failure
+                }
+            }
+
+            if ($feeAmount > 0) {
+                $feeStr = $fmt->formatCurrency($feeAmount, $currency);
+                Session::flash('success', "SEPA transfer submitted successfully (fee applied: {$feeStr}).");
+            } else {
+                Session::flash('success', 'SEPA transfer submitted successfully.');
+            }
             $this->redirect('/transactions/' . $txnId);
         } catch (\RuntimeException $e) {
             if ($db->inTransaction()) {
@@ -252,6 +293,49 @@ class TransferController extends Controller
             Session::flash('error', 'SEPA transfer failed. Please try again.');
             $this->redirect('/transfer/sepa');
         }
+    }
+
+    /**
+     * Look up the applicable fee from fee_schedules for a SEPA/wire transfer.
+     * Returns the fee amount (0.00 if none found).
+     */
+    private function lookupFee(\PDO $db, int $accountTypeId, float $amount): float
+    {
+        // Try account-type-specific fee first, then fall back to universal fee
+        $stmt = $db->prepare(
+            "SELECT fixed_amount, percentage, min_fee, max_fee
+               FROM fee_schedules
+              WHERE fee_type IN ('wire_transfer','transaction')
+                AND is_active = 1
+                AND (account_type_id = ? OR account_type_id IS NULL)
+                AND (effective_to IS NULL OR effective_to >= CURDATE())
+                AND effective_from <= CURDATE()
+              ORDER BY (account_type_id IS NULL) ASC  -- prefer specific over universal
+              LIMIT 1"
+        );
+        $stmt->execute([$accountTypeId]);
+        $fee = $stmt->fetch();
+
+        if (!$fee) {
+            return 0.00;
+        }
+
+        $calculated = 0.00;
+        if ($fee['fixed_amount'] !== null) {
+            $calculated += (float)$fee['fixed_amount'];
+        }
+        if ($fee['percentage'] !== null) {
+            $calculated += $amount * (float)$fee['percentage'];
+        }
+
+        if ($fee['min_fee'] !== null) {
+            $calculated = max($calculated, (float)$fee['min_fee']);
+        }
+        if ($fee['max_fee'] !== null) {
+            $calculated = min($calculated, (float)$fee['max_fee']);
+        }
+
+        return round($calculated, 2);
     }
 
     private function getMyAccounts(): array

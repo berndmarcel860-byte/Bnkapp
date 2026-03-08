@@ -275,4 +275,18 @@ window.BnkApp = {
   });
 })();
 
+// ---------------------------------------------------------------------------
+// Transaction status update — show/hide failure reason field
+// ---------------------------------------------------------------------------
+(function () {
+  const statusSel = document.querySelector('select[name="status"]');
+  const failField = document.getElementById('failureReasonField');
+  if (!statusSel || !failField) return;
+  function toggle() {
+    failField.style.display = statusSel.value === 'failed' ? '' : 'none';
+  }
+  statusSel.addEventListener('change', toggle);
+  toggle();
+})();
+
 console.info('[BnkApp Admin] JS loaded.');

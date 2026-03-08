@@ -165,6 +165,11 @@
                     <i class="bi bi-gear"></i><span>Settings</span>
                 </a>
             </li>
+            <li class="nav-item">
+                <a href="/email-templates" class="nav-link sidebar-link <?= $isActive('/email-templates') ?>">
+                    <i class="bi bi-envelope-paper"></i><span>Email Templates</span>
+                </a>
+            </li>
         </ul>
     </div>
 

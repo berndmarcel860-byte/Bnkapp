@@ -78,7 +78,7 @@ class FormatHelper
         return match ($status) {
             'active', 'approved', 'completed', 'paid_off', 'settled'
                 => 'success',
-            'pending', 'applied', 'in_review', 'processing', 'inactive'
+            'pending', 'applied', 'in_review', 'processing', 'inactive', 'under_review'
                 => 'warning',
             'frozen', 'blocked', 'defaulted', 'failed', 'rejected', 'cancelled'
                 => 'danger',

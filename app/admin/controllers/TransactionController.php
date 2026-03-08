@@ -2,7 +2,7 @@
 /**
  * BnkApp Admin — Transaction Controller
  *
- * View transactions, post deposits, execute transfers, and reverse payments.
+ * View transactions, post deposits, execute transfers, reverse and update status.
  */
 declare(strict_types=1);
 
@@ -11,7 +11,9 @@ namespace BnkApp\Controllers;
 use BnkApp\Core\Auth;
 use BnkApp\Core\Controller;
 use BnkApp\Core\Database;
+use BnkApp\Core\EmailService;
 use BnkApp\Core\Request;
+use BnkApp\Middleware\CsrfMiddleware;
 use BnkApp\Models\Transaction;
 
 class TransactionController extends Controller
@@ -59,6 +61,63 @@ class TransactionController extends Controller
             'title'       => "Transaction #{$txn['id']}",
             'transaction' => $txn,
         ]);
+    }
+
+    /**
+     * PATCH /transactions/{id}/status
+     * Admin: update transaction status and optionally send email.
+     */
+    public function updateStatus(Request $request, array $params = []): void
+    {
+        (new CsrfMiddleware())->handle($request);
+
+        $txn = $this->txnModel->findWithDetails((int)$params['id']);
+        if ($txn === null) {
+            $this->flashError('Transaction not found.');
+            $this->redirect('/transactions');
+        }
+
+        $allowedStatuses = ['pending', 'processing', 'under_review', 'completed', 'failed', 'cancelled', 'reversed'];
+        $newStatus = $request->input('status', '');
+
+        if (!in_array($newStatus, $allowedStatuses, true)) {
+            $this->flashError('Invalid status selected.');
+            $this->redirect('/transactions/' . $txn['id']);
+        }
+
+        $adminNote     = (string)($request->input('admin_note', '') ?? '');
+        $failureReason = (string)($request->input('failure_reason', '') ?? '');
+        $sendEmail     = $request->input('send_email') === '1';
+
+        // Update the transaction
+        $db = Database::getInstance();
+        $updateData = ['status' => $newStatus];
+        if ($failureReason !== '') {
+            $updateData['failure_reason'] = $failureReason;
+        }
+
+        $setClauses = implode(', ', array_map(fn($k) => "{$k} = ?", array_keys($updateData)));
+        $values = array_values($updateData);
+        $values[] = $txn['id'];
+        $db->prepare("UPDATE transactions SET {$setClauses} WHERE id = ?")->execute($values);
+
+        // Send email notification if requested and customer email is available
+        if ($sendEmail && !empty($txn['initiator_email'])) {
+            $this->sendStatusEmail($txn, $newStatus, $adminNote, $failureReason);
+        }
+
+        // Audit log
+        $db->prepare(
+            "INSERT INTO audit_logs (user_id, action, entity_type, entity_id, new_values, status)
+             VALUES (?, 'STATUS_UPDATED', 'transaction', ?, ?, 'success')"
+        )->execute([
+            Auth::id(),
+            (string)$txn['id'],
+            json_encode(['new_status' => $newStatus, 'admin_note' => $adminNote]),
+        ]);
+
+        $this->flashSuccess("Transaction #{$txn['id']} status updated to «{$newStatus}».");
+        $this->redirect('/transactions/' . $txn['id']);
     }
 
     /**
@@ -155,4 +214,54 @@ class TransactionController extends Controller
         $this->txnModel->update((int)$params['id'], ['status' => TXN_REVERSED]);
         $this->success(null, 'Transaction reversed.');
     }
+
+    // ------------------------------------------------------------------
+    // Private helpers
+    // ------------------------------------------------------------------
+
+    private function sendStatusEmail(array $txn, string $newStatus, string $adminNote, string $failureReason): void
+    {
+        $slugMap = [
+            'under_review' => 'transfer_under_review',
+            'completed'    => 'transfer_completed',
+            'failed'       => 'transfer_failed',
+        ];
+
+        $slug = $slugMap[$newStatus] ?? null;
+        if ($slug === null) {
+            return;
+        }
+
+        $currency = $txn['currency_code'] ?? 'EUR';
+        try {
+            $fmt = new \NumberFormatter('en_GB', \NumberFormatter::CURRENCY);
+            $amountFormatted = $fmt->formatCurrency((float)($txn['amount'] ?? 0), $currency);
+            $feeFormatted    = $fmt->formatCurrency((float)($txn['fee_amount'] ?? 0), $currency);
+        } catch (\Throwable) {
+            $amountFormatted = number_format((float)($txn['amount'] ?? 0), 2) . ' ' . $currency;
+            $feeFormatted    = number_format((float)($txn['fee_amount'] ?? 0), 2) . ' ' . $currency;
+        }
+
+        $vars = [
+            'customer_name'  => $txn['initiator_full_name'] ?? 'Customer',
+            'amount'         => $amountFormatted,
+            'fee'            => $feeFormatted,
+            'from_iban'      => $txn['from_iban']      ?? '—',
+            'to_iban'        => $txn['to_iban']        ?? '—',
+            'creditor_name'  => $txn['creditor_name']  ?? '—',
+            'reference'      => $txn['transaction_ref'] ?? '—',
+            'status'         => ucwords(str_replace('_', ' ', $newStatus)),
+            'admin_note'     => $adminNote !== '' ? $adminNote : 'No additional information provided.',
+            'failure_reason' => $failureReason !== '' ? $failureReason : 'Please contact support.',
+        ];
+
+        $email = new EmailService();
+        $email->sendTemplate(
+            $slug,
+            $txn['initiator_email'],
+            $txn['initiator_full_name'] ?? 'Customer',
+            $vars
+        );
+    }
 }
+

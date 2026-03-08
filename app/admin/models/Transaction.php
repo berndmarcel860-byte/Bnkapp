@@ -32,15 +32,22 @@ class Transaction extends Model
     {
         $stmt = $this->query(
             "SELECT t.*,
-                    fa.iban AS from_iban, ta.iban AS to_iban,
+                    fa.iban AS from_iban,
+                    COALESCE(ta.iban, st.creditor_iban) AS to_iban,
+                    st.creditor_name, st.debtor_name, st.sepa_type,
+                    st.remittance_info, st.creditor_bic,
                     CONCAT(iu.first_name, ' ', iu.last_name) AS initiated_by_name,
                     CONCAT(au.first_name, ' ', au.last_name) AS approved_by_name,
-                    c.name AS category_name
+                    c.name AS category_name,
+                    u.email AS initiator_email,
+                    CONCAT(u.first_name, ' ', u.last_name) AS initiator_full_name
                FROM transactions t
                LEFT JOIN bank_accounts fa ON fa.id = t.from_account_id
                LEFT JOIN bank_accounts ta ON ta.id = t.to_account_id
+               LEFT JOIN sepa_transfers st ON st.transaction_id = t.id
                LEFT JOIN users iu ON iu.id = t.initiated_by
                LEFT JOIN users au ON au.id = t.approved_by
+               LEFT JOIN users u  ON u.id  = t.initiated_by
                LEFT JOIN transaction_categories c ON c.id = t.category_id
               WHERE t.id = ? LIMIT 1",
             [$id]
@@ -104,10 +111,12 @@ class Transaction extends Model
             "SELECT t.id, t.transaction_ref, t.transaction_type,
                     t.amount, t.currency_code, t.fee_amount, t.net_amount,
                     t.status, t.description, t.booking_date, t.created_at,
-                    fa.iban AS from_iban, ta.iban AS to_iban
+                    fa.iban AS from_iban,
+                    COALESCE(ta.iban, st.creditor_iban) AS to_iban
                FROM transactions t
                LEFT JOIN bank_accounts fa ON fa.id = t.from_account_id
                LEFT JOIN bank_accounts ta ON ta.id = t.to_account_id
+               LEFT JOIN sepa_transfers st ON st.transaction_id = t.id
                {$w}
               ORDER BY t.created_at DESC
               LIMIT {$perPage} OFFSET {$offset}",

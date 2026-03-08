@@ -65,12 +65,13 @@ define('ACCOUNT_CLOSED',   'closed');
 // ---------------------------------------------------------------------------
 // Transaction statuses
 // ---------------------------------------------------------------------------
-define('TXN_PENDING',    'pending');
-define('TXN_PROCESSING', 'processing');
-define('TXN_COMPLETED',  'completed');
-define('TXN_FAILED',     'failed');
-define('TXN_CANCELLED',  'cancelled');
-define('TXN_REVERSED',   'reversed');
+define('TXN_PENDING',      'pending');
+define('TXN_PROCESSING',   'processing');
+define('TXN_UNDER_REVIEW', 'under_review');
+define('TXN_COMPLETED',    'completed');
+define('TXN_FAILED',       'failed');
+define('TXN_CANCELLED',    'cancelled');
+define('TXN_REVERSED',     'reversed');
 
 // ---------------------------------------------------------------------------
 // Loan statuses

@@ -28,8 +28,8 @@ ob_start(); ?>
             </select>
             <select name="status" class="form-select form-select-sm" style="width:auto">
                 <option value="">All Statuses</option>
-                <?php foreach (['pending','processing','completed','failed','cancelled','reversed'] as $s): ?>
-                <option value="<?= $s ?>" <?= ($filter['status']??'')===$s?'selected':'' ?>><?= ucfirst($s) ?></option>
+                <?php foreach (['pending','processing','under_review','completed','failed','cancelled','reversed'] as $s): ?>
+                <option value="<?= $s ?>" <?= ($filter['status']??'')===$s?'selected':'' ?>><?= ucwords(str_replace('_',' ',$s)) ?></option>
                 <?php endforeach; ?>
             </select>
             <input type="date" name="from" class="form-control form-control-sm" style="width:auto" value="<?= FormatHelper::e($filter['from']??'') ?>">

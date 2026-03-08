@@ -133,11 +133,12 @@ class App
         $r->patch('/accounts/{id}/close',   'AccountController@close',   ['AuthMiddleware', 'RoleMiddleware']);
 
         // ---- Transactions ----
-        $r->get( '/transactions',              'TransactionController@index',   ['AuthMiddleware']);
-        $r->get( '/transactions/{id}',         'TransactionController@show',    ['AuthMiddleware']);
-        $r->post('/transactions/deposit',      'TransactionController@deposit',  ['AuthMiddleware', 'RoleMiddleware']);
-        $r->post('/transactions/transfer',     'TransactionController@transfer', ['AuthMiddleware', 'RoleMiddleware']);
-        $r->post('/transactions/{id}/reverse', 'TransactionController@reverse',  ['AuthMiddleware', 'RoleMiddleware']);
+        $r->get(  '/transactions',                'TransactionController@index',        ['AuthMiddleware']);
+        $r->get(  '/transactions/{id}',           'TransactionController@show',         ['AuthMiddleware']);
+        $r->post( '/transactions/deposit',        'TransactionController@deposit',      ['AuthMiddleware', 'RoleMiddleware']);
+        $r->post( '/transactions/transfer',       'TransactionController@transfer',     ['AuthMiddleware', 'RoleMiddleware']);
+        $r->post( '/transactions/{id}/reverse',   'TransactionController@reverse',      ['AuthMiddleware', 'RoleMiddleware']);
+        $r->patch('/transactions/{id}/status',    'TransactionController@updateStatus', ['AuthMiddleware', 'RoleMiddleware']);
 
         // ---- SEPA Transfers ----
         $r->get('/sepa',      'SepaController@index', ['AuthMiddleware']);
@@ -209,5 +210,13 @@ class App
         // ---- Settings ----
         $r->get( '/settings',                       'SettingsController@index',           ['AuthMiddleware', 'RoleMiddleware']);
         $r->post('/settings/account-types',         'SettingsController@storeAccountType', ['AuthMiddleware', 'RoleMiddleware']);
+
+        // ---- Email Templates ----
+        $r->get(   '/email-templates',              'EmailTemplateController@index',   ['AuthMiddleware', 'RoleMiddleware']);
+        $r->get(   '/email-templates/create',       'EmailTemplateController@create',  ['AuthMiddleware', 'RoleMiddleware']);
+        $r->post(  '/email-templates',              'EmailTemplateController@store',   ['AuthMiddleware', 'RoleMiddleware']);
+        $r->get(   '/email-templates/{id}/edit',    'EmailTemplateController@edit',    ['AuthMiddleware', 'RoleMiddleware']);
+        $r->patch( '/email-templates/{id}',         'EmailTemplateController@update',  ['AuthMiddleware', 'RoleMiddleware']);
+        $r->delete('/email-templates/{id}',         'EmailTemplateController@destroy', ['AuthMiddleware', 'RoleMiddleware']);
     }
 }

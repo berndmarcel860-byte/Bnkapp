@@ -30,10 +30,13 @@ class TransactionController extends Controller
         $total = (int)$countStmt->fetchColumn();
 
         $stmt = $db->prepare(
-            "SELECT t.*, fa.iban AS from_iban, ta.iban AS to_iban
+            "SELECT t.*,
+                    fa.iban AS from_iban,
+                    COALESCE(ta.iban, st.creditor_iban) AS to_iban
                FROM transactions t
                LEFT JOIN bank_accounts fa ON fa.id = t.from_account_id
                LEFT JOIN bank_accounts ta ON ta.id = t.to_account_id
+               LEFT JOIN sepa_transfers st ON st.transaction_id = t.id
               WHERE fa.user_id = ? OR ta.user_id = ?
               ORDER BY t.created_at DESC
               LIMIT 25 OFFSET {$offset}"
@@ -53,11 +56,15 @@ class TransactionController extends Controller
     {
         $db   = Database::getInstance();
         $stmt = $db->prepare(
-            "SELECT t.*, fa.iban AS from_iban, ta.iban AS to_iban,
+            "SELECT t.*,
+                    fa.iban AS from_iban,
+                    COALESCE(ta.iban, st.creditor_iban) AS to_iban,
+                    st.creditor_name, st.remittance_info,
                     fa.user_id AS from_user_id, ta.user_id AS to_user_id
                FROM transactions t
                LEFT JOIN bank_accounts fa ON fa.id = t.from_account_id
                LEFT JOIN bank_accounts ta ON ta.id = t.to_account_id
+               LEFT JOIN sepa_transfers st ON st.transaction_id = t.id
               WHERE t.id = ? LIMIT 1"
         );
         $stmt->execute([$params['id']]);
