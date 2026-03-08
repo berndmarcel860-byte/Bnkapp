@@ -62,6 +62,26 @@
 })();
 
 // ---------------------------------------------------------------------------
+// Password visibility toggle (replaces inline onclick handlers)
+// ---------------------------------------------------------------------------
+(function () {
+  document.querySelectorAll('[data-toggle-pwd]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var inp = btn.closest('.input-group').querySelector('input[type="password"], input[type="text"]');
+      var icon = btn.querySelector('i');
+      if (!inp) return;
+      if (inp.type === 'password') {
+        inp.type = 'text';
+        if (icon) icon.className = 'bi bi-eye-slash';
+      } else {
+        inp.type = 'password';
+        if (icon) icon.className = 'bi bi-eye';
+      }
+    });
+  });
+})();
+
+// ---------------------------------------------------------------------------
 // Confirm dialogs — data-confirm attribute
 // ---------------------------------------------------------------------------
 document.addEventListener('click', function (e) {

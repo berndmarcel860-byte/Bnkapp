@@ -8,6 +8,28 @@ ob_start(); ?>
 <div class="d-flex align-items-center gap-2 mb-3">
     <a href="/beneficiaries" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i></a>
     <h1 class="page-title mb-0">Beneficiary #<?= $beneficiary['id'] ?></h1>
+    <div class="ms-auto d-flex gap-2">
+        <?php if ($beneficiary['is_verified']): ?>
+        <form method="POST" action="/beneficiaries/<?= $beneficiary['id'] ?>/verify" data-ajax="true" data-reload="true">
+            <?= \BnkApp\Middleware\CsrfMiddleware::field() ?>
+            <input type="hidden" name="_method" value="PATCH">
+            <input type="hidden" name="verified" value="0">
+            <button type="submit" class="btn btn-sm btn-outline-warning"
+                    data-confirm="Remove verification from this beneficiary?">
+                <i class="bi bi-shield-x me-1"></i>Unverify
+            </button>
+        </form>
+        <?php else: ?>
+        <form method="POST" action="/beneficiaries/<?= $beneficiary['id'] ?>/verify" data-ajax="true" data-reload="true">
+            <?= \BnkApp\Middleware\CsrfMiddleware::field() ?>
+            <input type="hidden" name="_method" value="PATCH">
+            <input type="hidden" name="verified" value="1">
+            <button type="submit" class="btn btn-sm btn-success">
+                <i class="bi bi-shield-check me-1"></i>Verify Beneficiary
+            </button>
+        </form>
+        <?php endif; ?>
+    </div>
 </div>
 
 <div class="row g-3">

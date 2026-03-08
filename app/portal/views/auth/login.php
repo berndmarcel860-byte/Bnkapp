@@ -22,8 +22,7 @@
         <div class="input-group">
             <span class="input-group-text"><i class="bi bi-lock"></i></span>
             <input type="password" name="password" class="form-control" autocomplete="current-password" required>
-            <button type="button" class="btn btn-outline-secondary"
-                    onclick="var i=this.previousElementSibling;i.type=i.type==='password'?'text':'password'">
+            <button type="button" class="btn btn-outline-secondary" data-toggle-pwd>
                 <i class="bi bi-eye"></i>
             </button>
         </div>

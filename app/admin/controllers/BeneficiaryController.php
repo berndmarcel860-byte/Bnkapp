@@ -83,6 +83,20 @@ class BeneficiaryController extends Controller
     }
 
     /**
+     * PATCH /beneficiaries/{id}/verify
+     */
+    public function verify(Request $request, array $params = []): void
+    {
+        $verified = (int)$request->input('verified', 1);
+        Database::getInstance()
+            ->prepare('UPDATE beneficiaries SET is_verified = ? WHERE id = ?')
+            ->execute([$verified, $params['id']]);
+
+        $label = $verified ? 'verified' : 'unverified';
+        $this->success(null, "Beneficiary {$label} successfully.");
+    }
+
+    /**
      * DELETE /beneficiaries/{id}
      */
     public function destroy(Request $request, array $params = []): void

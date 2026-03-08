@@ -35,7 +35,7 @@ ob_start(); ?>
             <input type="password" id="password" name="password"
                 class="form-control <?= !empty($errors['password']) ? 'is-invalid' : '' ?>"
                 autocomplete="current-password" required>
-            <button type="button" class="btn btn-outline-secondary" onclick="togglePwd(this)" tabindex="-1">
+            <button type="button" class="btn btn-outline-secondary" data-toggle-pwd tabindex="-1">
                 <i class="bi bi-eye"></i>
             </button>
             <?php if (!empty($errors['password'])): ?>
@@ -50,15 +50,6 @@ ob_start(); ?>
         </button>
     </div>
 </form>
-
-<script>
-function togglePwd(btn) {
-    const inp = btn.closest('.input-group').querySelector('input[type="password"], input[type="text"]');
-    const icon = btn.querySelector('i');
-    if (inp.type === 'password') { inp.type = 'text'; icon.className = 'bi bi-eye-slash'; }
-    else { inp.type = 'password'; icon.className = 'bi bi-eye'; }
-}
-</script>
 
 <?php
 $content = ob_get_clean();

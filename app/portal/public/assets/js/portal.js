@@ -53,4 +53,33 @@ document.querySelectorAll('[data-copy]').forEach(function (btn) {
   });
 });
 
+// Password visibility toggle (replaces inline onclick handlers)
+document.querySelectorAll('[data-toggle-pwd]').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var inp = btn.closest('.input-group').querySelector('input[type="password"], input[type="text"]');
+    var icon = btn.querySelector('i');
+    if (!inp) return;
+    if (inp.type === 'password') {
+      inp.type = 'text';
+      if (icon) icon.className = 'bi bi-eye-slash';
+    } else {
+      inp.type = 'password';
+      if (icon) icon.className = 'bi bi-eye';
+    }
+  });
+});
+
+// SEPA quick-select beneficiary fill
+(function () {
+  var benSelect = document.getElementById('benSelect');
+  if (!benSelect) return;
+  benSelect.addEventListener('change', function () {
+    var opt = benSelect.options[benSelect.selectedIndex];
+    var ibanField = document.getElementById('creditorIban');
+    var nameField = document.getElementById('creditorName');
+    if (ibanField) ibanField.value = opt.value;
+    if (nameField) nameField.value = opt.dataset.name || '';
+  });
+})();
+
 console.info('[BnkApp Portal] JS loaded.');

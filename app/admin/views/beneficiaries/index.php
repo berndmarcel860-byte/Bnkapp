@@ -23,10 +23,10 @@ ob_start(); ?>
     </div>
     <div class="table-responsive">
         <table class="table admin-table" id="ben-table">
-            <thead><tr><th>#</th><th>Beneficiary Name</th><th>IBAN</th><th>BIC</th><th>Bank</th><th>Owner</th><th>Verified</th><th>Added</th></tr></thead>
+            <thead><tr><th>#</th><th>Beneficiary Name</th><th>IBAN</th><th>BIC</th><th>Bank</th><th>Owner</th><th>Verified</th><th>Added</th><th></th></tr></thead>
             <tbody>
             <?php if (empty($beneficiaries)): ?>
-                <tr><td colspan="8" class="text-center text-muted py-4">No beneficiaries found.</td></tr>
+                <tr><td colspan="9" class="text-center text-muted py-4">No beneficiaries found.</td></tr>
             <?php else: ?>
                 <?php foreach ($beneficiaries as $b): ?>
                 <tr>
@@ -38,6 +38,7 @@ ob_start(); ?>
                     <td><?= FormatHelper::e($b['owner_name']) ?></td>
                     <td><?= $b['is_verified'] ? '<span class="badge text-bg-success">Yes</span>' : '<span class="badge text-bg-warning">No</span>' ?></td>
                     <td class="text-muted small"><?= FormatHelper::dateTime($b['created_at']) ?></td>
+                    <td><a href="/beneficiaries/<?= $b['id'] ?>" class="btn btn-sm btn-outline-primary">View</a></td>
                 </tr>
                 <?php endforeach; ?>
             <?php endif; ?>

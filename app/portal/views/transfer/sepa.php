@@ -24,7 +24,7 @@ ob_start(); ?>
                 <?php if (!empty($beneficiaries)): ?>
                 <div class="col-12">
                     <label class="form-label fw-semibold">Quick Select Beneficiary</label>
-                    <select class="form-select" id="benSelect" onchange="fillBen(this)">
+                    <select class="form-select" id="benSelect">
                         <option value="">-- Select a saved beneficiary --</option>
                         <?php foreach ($beneficiaries as $b): ?>
                         <option value="<?= $esc($b['iban']) ?>" data-name="<?= $esc($b['account_holder_name']) ?>">
@@ -69,13 +69,5 @@ ob_start(); ?>
         </form>
     </div>
 </div>
-
-<script>
-function fillBen(sel) {
-    const opt = sel.options[sel.selectedIndex];
-    document.getElementById('creditorIban').value = opt.value;
-    document.getElementById('creditorName').value = opt.dataset.name || '';
-}
-</script>
 
 <?php $content = ob_get_clean(); require VIEWS_PATH . '/layouts/main.php';

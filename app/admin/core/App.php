@@ -154,9 +154,10 @@ class App
         $r->patch('/standing-orders/{id}/cancel',  'StandingOrderController@cancel', ['AuthMiddleware', 'RoleMiddleware']);
 
         // ---- Beneficiaries ----
-        $r->get(   '/beneficiaries',       'BeneficiaryController@index',   ['AuthMiddleware']);
-        $r->get(   '/beneficiaries/{id}',  'BeneficiaryController@show',    ['AuthMiddleware']);
-        $r->delete('/beneficiaries/{id}',  'BeneficiaryController@destroy', ['AuthMiddleware', 'RoleMiddleware']);
+        $r->get(   '/beneficiaries',              'BeneficiaryController@index',   ['AuthMiddleware']);
+        $r->get(   '/beneficiaries/{id}',         'BeneficiaryController@show',    ['AuthMiddleware']);
+        $r->patch( '/beneficiaries/{id}/verify',  'BeneficiaryController@verify',  ['AuthMiddleware', 'RoleMiddleware']);
+        $r->delete('/beneficiaries/{id}',         'BeneficiaryController@destroy', ['AuthMiddleware', 'RoleMiddleware']);
 
         // ---- Loans ----
         $r->get(   '/loans',              'LoanController@index',   ['AuthMiddleware']);
